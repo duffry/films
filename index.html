@@ -2,29 +2,45 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Film Lists</title>
+  <title>Films to Watch</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <main>
+  <header>
+    <button id="backButton" type="button" disabled>← Back</button>
     <h1>Films to Watch</h1>
+  </header>
 
-    <label for="listSelect">Choose a list:</label>
-    <select id="listSelect"></select>
+  <main>
+    <!-- View 1: Lists -->
+    <section id="view-lists">
+      <div class="section-header">
+        <h2>Lists</h2>
+        <div id="listsSummary" class="summary-text"></div>
+      </div>
+      <div id="listsContainer" class="card-list"></div>
+      <p id="listsStatus" class="status"></p>
+    </section>
 
-    <table id="filmsTable">
-      <thead>
-        <tr>
-          <th>Title</th>
-          <th>Year</th>
-          <th>Notes</th>
-          <th>Watched</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <!-- View 2: Films in a list -->
+    <section id="view-films" hidden>
+      <div class="section-header">
+        <h2 id="filmsListName">List</h2>
+        <div id="filmsListStats" class="summary-text"></div>
+      </div>
+      <div id="filmsContainer" class="card-list"></div>
+      <p id="filmsStatus" class="status"></p>
+    </section>
 
-    <p id="status"></p>
+    <!-- View 3: Film detail -->
+    <section id="view-film-detail" hidden>
+      <article id="filmDetail">
+        <h2 id="detailTitle"></h2>
+        <p id="detailYear" class="detail-meta"></p>
+        <p id="detailNotes"></p>
+      </article>
+    </section>
   </main>
 
   <script src="app.js"></script>
