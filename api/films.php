@@ -8,12 +8,23 @@ if (!$listId) {
     json_response(['error' => 'Missing or invalid list_id'], 400);
 }
 
-$stmt = $pdo->prepare(
-    'SELECT id, title, year, notes, watched_at
-     FROM films
-     WHERE list_id = ?
-     ORDER BY title'
-);
+$sql = '
+    SELECT
+        id,
+        title,
+        year,
+        notes,
+        watched_at,
+        display_order
+    FROM films
+    WHERE list_id = ?
+    ORDER BY
+        display_order IS NULL,   -- rows with an explicit order first
+        display_order,
+        title
+';
+
+$stmt = $pdo->prepare($sql);
 $stmt->execute([$listId]);
 $rows = $stmt->fetchAll();
 
