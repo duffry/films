@@ -195,3 +195,28 @@ main {
   opacity: 0.6;
   cursor: default;
 }
+
+#addFilmButton {
+  margin-top: 0.75rem;
+  appearance: none;
+  border: none;
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.95rem;
+  background: #2563eb;
+  color: #f9fafb;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  transition: background 0.12s ease, transform 0.06s ease, opacity 0.06s ease;
+}
+
+#addFilmButton:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+#addFilmButton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

@@ -18,6 +18,7 @@ const filmsContainer = document.getElementById('filmsContainer');
 const filmsListName = document.getElementById('filmsListName');
 const filmsListStats = document.getElementById('filmsListStats');
 const filmsStatus = document.getElementById('filmsStatus');
+const addFilmButton = document.getElementById('addFilmButton');
 
 // Detail view
 const detailTitle = document.getElementById('detailTitle');
@@ -239,6 +240,54 @@ function openList(list) {
   navigateTo('films');
   loadFilmsForList(list);
 }
+
+// Add film
+addFilmButton.addEventListener('click', async () => {
+  if (!currentList) {
+    alert('No list selected.');
+    return;
+  }
+
+  const title = prompt('Film title:');
+  if (!title || !title.trim()) return;
+
+  const yearInput = prompt('Year (optional):') || '';
+  const notes = prompt('Notes (optional):') || '';
+
+  let year = null;
+  if (yearInput.trim() !== '') {
+    const y = parseInt(yearInput.trim(), 10);
+    if (!Number.isNaN(y) && y > 0) {
+      year = y;
+    }
+  }
+
+  addFilmButton.disabled = true;
+  const originalText = addFilmButton.textContent;
+  addFilmButton.textContent = 'Adding...';
+
+  try {
+    await fetchJson('api/films_add.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        list_id: currentList.id,
+        title: title.trim(),
+        year,
+        notes: notes.trim()
+      })
+    });
+
+    await loadFilmsForList(currentList);
+    await loadLists();
+  } catch (err) {
+    console.error(err);
+    alert('Error adding film.');
+  } finally {
+    addFilmButton.disabled = false;
+    addFilmButton.textContent = originalText;
+  }
+});
 
 // ----- Film detail -----
 function updateDetailWatchedUI() {
