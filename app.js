@@ -11,6 +11,7 @@ const backButton = document.getElementById('backButton');
 const listsContainer = document.getElementById('listsContainer');
 const listsSummary = document.getElementById('listsSummary');
 const listsStatus = document.getElementById('listsStatus');
+const addListButton = document.getElementById('addListButton');
 
 // Films view
 const filmsContainer = document.getElementById('filmsContainer');
@@ -62,7 +63,7 @@ function goBack() {
   viewStack.pop();
   const target = viewStack[viewStack.length - 1];
 
-  // Optional: refresh on back so counts/orderings are current
+  // Refresh on back so counts/orderings are current
   if (target === 'films' && currentList) {
     loadFilmsForList(currentList);
   } else if (target === 'lists') {
@@ -132,6 +133,37 @@ async function loadLists() {
     listsStatus.textContent = 'Error loading lists.';
   }
 }
+
+// Add list
+addListButton.addEventListener('click', async () => {
+  const name = prompt('List name:');
+  if (!name || !name.trim()) return;
+
+  const description = prompt('Description (optional):') || '';
+
+  addListButton.disabled = true;
+  const originalText = addListButton.textContent;
+  addListButton.textContent = 'Adding...';
+
+  try {
+    await fetchJson('api/lists_add.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: name.trim(),
+        description: description.trim()
+      })
+    });
+
+    await loadLists();
+  } catch (err) {
+    console.error(err);
+    alert('Error adding list.');
+  } finally {
+    addListButton.disabled = false;
+    addListButton.textContent = originalText;
+  }
+});
 
 // ----- Films for a list -----
 async function loadFilmsForList(list) {
