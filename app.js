@@ -1,4 +1,4 @@
-// ----- DOM refs -----
+// ----- DOM references -----
 const views = {
   lists: document.getElementById('view-lists'),
   films: document.getElementById('view-films'),
@@ -21,23 +21,26 @@ const filmsStatus = document.getElementById('filmsStatus');
 // Detail view
 const detailTitle = document.getElementById('detailTitle');
 const detailYear = document.getElementById('detailYear');
+const detailWatched = document.getElementById('detailWatched');
 const detailNotes = document.getElementById('detailNotes');
+const detailMarkWatched = document.getElementById('detailMarkWatched');
 
 // ----- state -----
 let currentView = 'lists';
 let viewStack = ['lists'];
 let currentList = null;
-let currentFilms = []; // cache films for current list
+let currentFilms = [];  // cache for current list
+let currentFilm = null; // currently selected film
 
 // ----- helpers -----
-async function fetchJson(url) {
-  const res = await fetch(url);
+async function fetchJson(url, options) {
+  const res = await fetch(url, options);
+  const text = await res.text();
   if (!res.ok) {
-    const text = await res.text();
     console.error('Fetch error', url, res.status, text);
     throw new Error(`HTTP ${res.status}`);
   }
-  return res.json();
+  return JSON.parse(text);
 }
 
 function showView(name) {
@@ -58,6 +61,14 @@ function goBack() {
   if (viewStack.length <= 1) return;
   viewStack.pop();
   const target = viewStack[viewStack.length - 1];
+
+  // Optional: refresh on back so counts/orderings are current
+  if (target === 'films' && currentList) {
+    loadFilmsForList(currentList);
+  } else if (target === 'lists') {
+    loadLists();
+  }
+
   showView(target);
 }
 
@@ -80,8 +91,10 @@ async function loadLists() {
     let totalWatched = 0;
 
     lists.forEach(list => {
-      totalFilms += Number(list.total_films || 0);
-      totalWatched += Number(list.watched_films || 0);
+      const total = Number(list.total_films || 0);
+      const watched = Number(list.watched_films || 0);
+      totalFilms += total;
+      totalWatched += watched;
 
       const row = document.createElement('div');
       row.className = 'card-row';
@@ -102,7 +115,7 @@ async function loadLists() {
 
       const meta = document.createElement('div');
       meta.className = 'card-meta';
-      meta.textContent = `${list.watched_films}/${list.total_films}`;
+      meta.textContent = `${watched}/${total}`;
 
       row.appendChild(main);
       row.appendChild(meta);
@@ -196,16 +209,69 @@ function openList(list) {
 }
 
 // ----- Film detail -----
+function updateDetailWatchedUI() {
+  if (!currentFilm) return;
+
+  if (currentFilm.watched_at) {
+    detailWatched.textContent = `Watched on ${currentFilm.watched_at}`;
+    detailMarkWatched.textContent = 'Watched';
+    detailMarkWatched.disabled = true;
+  } else {
+    detailWatched.textContent = 'Not watched yet.';
+    detailMarkWatched.textContent = 'Mark watched today';
+    detailMarkWatched.disabled = false;
+  }
+}
+
 function openFilmDetail(film) {
+  currentFilm = film;
+
   detailTitle.textContent = film.title;
   detailYear.textContent = film.year ? `Year: ${film.year}` : '';
   detailNotes.textContent = film.notes || 'No notes yet.';
 
+  updateDetailWatchedUI();
   navigateTo('filmDetail');
 }
 
+// Mark watched today
+detailMarkWatched.addEventListener('click', async () => {
+  if (!currentFilm) return;
+
+  detailMarkWatched.disabled = true;
+  detailMarkWatched.textContent = 'Saving...';
+
+  try {
+    const updated = await fetchJson('api/film_watch.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ film_id: currentFilm.id })
+    });
+
+    // Update local state
+    currentFilm = { ...currentFilm, ...updated };
+    const idx = currentFilms.findIndex(f => f.id === currentFilm.id);
+    if (idx !== -1) {
+      currentFilms[idx] = { ...currentFilms[idx], ...updated };
+    }
+
+    updateDetailWatchedUI();
+
+    // Refresh lists and films so counts/orderings update
+    if (currentList) {
+      await loadFilmsForList(currentList);
+    }
+    await loadLists();
+  } catch (err) {
+    console.error(err);
+    alert('Error marking as watched.');
+    detailMarkWatched.disabled = false;
+    detailMarkWatched.textContent = 'Mark watched today';
+  }
+});
+
 // ----- init -----
 document.addEventListener('DOMContentLoaded', () => {
-  showView('lists'); // initial
+  showView('lists');
   loadLists();
 });
