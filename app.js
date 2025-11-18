@@ -121,6 +121,20 @@ async function loadLists() {
       row.appendChild(main);
       row.appendChild(meta);
 
+      // ---- progress bar ----
+      const progressOuter = document.createElement("div");
+      progressOuter.className = "list-progress-outer";
+
+      const progressInner = document.createElement("div");
+      progressInner.className = "list-progress-inner";
+
+      const pct = total > 0 ? (watched / total) * 100 : 0;
+      progressInner.style.width = `${pct}%`;
+
+      progressOuter.appendChild(progressInner);
+      row.appendChild(progressOuter);
+      // -----------------------
+
       row.addEventListener("click", () => openList(list));
 
       listsContainer.appendChild(row);
