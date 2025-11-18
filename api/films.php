@@ -21,7 +21,7 @@ $sql = '
     ORDER BY
         display_order IS NULL,   -- rows with an explicit order first
         display_order,
-        title
+        id
 ';
 
 $stmt = $pdo->prepare($sql);
