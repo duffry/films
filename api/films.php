@@ -2,30 +2,38 @@
 // api/films.php
 require 'db.php';
 
-$listId = filter_input(INPUT_GET, 'list_id', FILTER_VALIDATE_INT);
-
-if (!$listId) {
-    json_response(['error' => 'Missing or invalid list_id'], 400);
+if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+    json_response(['error' => 'Method not allowed'], 405);
 }
 
-$sql = '
-    SELECT
-        id,
-        title,
-        year,
-        notes,
-        watched_at,
-        display_order
-    FROM films
-    WHERE list_id = ?
-    ORDER BY
-        display_order IS NULL,   -- rows with an explicit order first
-        display_order,
-        id
-';
+// list_id is required
+$listId = isset($_GET['list_id']) ? (int)$_GET['list_id'] : 0;
+if ($listId <= 0) {
+    json_response(['error' => 'Invalid list_id'], 400);
+}
 
-$stmt = $pdo->prepare($sql);
-$stmt->execute([$listId]);
-$rows = $stmt->fetchAll();
+try {
+    $stmt = $pdo->prepare(
+        'SELECT
+             id,
+             list_id,
+             title,
+             year,
+             notes,
+             watched_at,
+             display_order
+         FROM films
+         WHERE list_id = ?
+         ORDER BY
+             display_order IS NULL,  -- put NULLs last
+             display_order,
+             title'
+    );
 
-json_response($rows);
+    $stmt->execute([$listId]);
+    $films = $stmt->fetchAll();
+
+    json_response($films);
+} catch (Throwable $e) {
+    json_response(['error' => 'Database error', 'details' => $e->getMessage()], 500);
+}
