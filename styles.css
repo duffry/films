@@ -82,16 +82,16 @@ main {
 }
 
 /* “Rows” for lists and films */
-.card-list {
+/* .card-list {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-}
+} */
 
 .card-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 0.7rem 0.9rem;
   border-radius: 0.6rem;
   background: #171717;
@@ -369,4 +369,222 @@ main {
   opacity: 0.5;
 }
 
+/* ============================
+   Stats page
+   ============================ */
 
+.stats-main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+.stats-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.stats-header h1 {
+  font-size: 1.8rem;
+  margin: 0;
+}
+
+.stats-summary {
+  font-size: 0.95rem;
+  opacity: 0.8;
+}
+
+/* View toggle buttons */
+
+.view-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.5rem 0 1.25rem;
+}
+
+.toggle-button {
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid #555;
+  background: #151515;
+  color: #eee;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.toggle-button.active {
+  background: #d2691e;
+  border-color: #d2691e;
+  color: #fff;
+}
+
+/* Card list (reuses the same general “card” look) */
+
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.card {
+  background: #151515;
+  border-radius: 16px;
+  padding: 0.55rem 0.85rem 0.4rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  overflow: hidden;              /* <-- trims the progress bar to rounded corners */
+}
+
+/* Stats cards only: text left, icon right */
+.service-card {
+  background: #151515;
+  border-radius: 16px;
+  padding: 0.55rem 0.85rem 0.4rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.service-card .card-main {
+  display: flex;
+  flex-direction: row;      /* <-- force horizontal layout */
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.service-card .card-main > div:first-child {
+  flex: 1;
+  text-align: left;
+}
+
+.card-title {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.card-subtitle {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  margin-top: 0.15rem;
+}
+
+.card-meta {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Service badge + icons (shared with main app logic) */
+
+.service-pill {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #222;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.service-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+.service-unknown {
+  opacity: 0.7;
+}
+
+/* Progress bar – same style as elsewhere */
+
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: #222;
+  overflow: hidden;
+}
+
+.progress-inner {
+  height: 100%;
+  background: #d2691e;
+  width: 0;  /* set by JS */
+}
+
+/* Table view */
+
+table.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+table.stats-table thead {
+  background: #181818;
+}
+
+table.stats-table th,
+table.stats-table td {
+  padding: 0.5rem 0.6rem;
+  text-align: right;
+  border-bottom: 1px solid #333;
+  white-space: nowrap;
+}
+
+table.stats-table th:first-child,
+table.stats-table td:first-child {
+  text-align: left;
+  white-space: normal;
+}
+
+table.stats-table tbody tr:nth-child(odd) {
+  background: #111;
+}
+
+table.stats-table tbody tr:nth-child(even) {
+  background: #151515;
+}
+
+.badge-unknown {
+  opacity: 0.8;
+  font-style: italic;
+}
+
+.stats-note {
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+/* Use the same lane width for stats cards and stats table */
+#serviceCardList,
+#statsTableSection {
+  max-width: 700px;   /* copy value from your film list container if different */
+  margin: 0 auto;
+}
+
+/* Keep stats header and toggle in the same lane as the cards/table */
+.stats-header,
+.view-toggle {
+  max-width: 700px;       /* match whatever you use for the list lane */
+  margin: 0 auto 1rem;
+}
+
+/* Optional: tighten the buttons a bit */
+.view-toggle {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}

@@ -5,74 +5,6 @@
   <title>Films to Watch – Stats</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="styles.css" />
-  <style>
-    /* A few tweaks specific to the stats page */
-    main {
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 1.5rem 1rem 3rem;
-    }
-
-    .stats-header {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .stats-header h1 {
-      font-size: 1.8rem;
-      margin: 0;
-    }
-
-    .stats-summary {
-      font-size: 0.95rem;
-      opacity: 0.8;
-    }
-
-    table.stats-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.9rem;
-    }
-
-    table.stats-table thead {
-      background: #181818;
-    }
-
-    table.stats-table th,
-    table.stats-table td {
-      padding: 0.5rem 0.6rem;
-      text-align: right;
-      border-bottom: 1px solid #333;
-      white-space: nowrap;
-    }
-
-    table.stats-table th:first-child,
-    table.stats-table td:first-child {
-      text-align: left;
-      white-space: normal;
-    }
-
-    table.stats-table tbody tr:nth-child(odd) {
-      background: #111;
-    }
-
-    table.stats-table tbody tr:nth-child(even) {
-      background: #151515;
-    }
-
-    .stats-note {
-      margin-top: 0.75rem;
-      font-size: 0.8rem;
-      opacity: 0.7;
-    }
-
-    .badge-unknown {
-      opacity: 0.8;
-      font-style: italic;
-    }
-  </style>
 </head>
 <body>
   <header class="app-header">
@@ -80,24 +12,43 @@
     <h1>Films to Watch – Stats</h1>
   </header>
 
-  <main>
+  <main class="stats-main">
     <section class="stats-header">
       <h1>Items by service</h1>
       <p class="stats-summary" id="statsSummary">Loading…</p>
     </section>
 
-    <section>
+    <div class="view-toggle">
+      <button class="toggle-button active" data-view="watched">Watched</button>
+      <button class="toggle-button" data-view="unwathed" style="display:none"></button>
+      <button class="toggle-button" data-view="unwatched">Unwatched</button>
+      <button class="toggle-button" data-view="total">Total</button>
+      <button class="toggle-button" data-view="table">Table</button>
+    </div>
+
+    <!-- Card view -->
+    <section id="statsCardsSection">
+      <div id="serviceCardList" class="card-list">
+        <!-- filled by stats.js -->
+      </div>
+      <p class="stats-note">
+        Progress bar shows this service’s share of the selected total (watched, unwatched or all items).
+      </p>
+    </section>
+
+    <!-- Table view -->
+    <section id="statsTableSection" style="display: none;">
       <table class="stats-table">
         <thead>
-          <tr>
-            <th>Service</th>
-            <th>Watched</th>
-            <th>% of watched</th>
-            <th>Unwatched</th>
-            <th>% of unwatched</th>
-            <th>Total</th>
-            <th>% of all items</th>
-          </tr>
+            <tr>
+                <th>Service</th>
+                <th data-sort="watched">Seen</th>
+                <th data-sort="percentWatched">% S</th>
+                <th data-sort="unwatched">Not</th>
+                <th data-sort="percentUnwatched">% N</th>
+                <th data-sort="total">Tot.</th>
+                <th data-sort="percentTotal">% T</th>
+            </tr>
         </thead>
         <tbody id="serviceStatsBody">
           <!-- filled by stats.js -->
