@@ -273,96 +273,102 @@ function renderCards(view) {
 // ---------- service items view ----------
 
 async function openServiceItems(serviceRow) {
-  const serviceId = serviceRow.service_id;
-  const serviceName = serviceRow.service_name || "Unknown";
+  const cardsSection   = document.getElementById("statsCardsSection");
+  const tableSection   = document.getElementById("statsTableSection");
+  const itemsSection   = document.getElementById("serviceItemsSection");
+  const titleEl        = document.getElementById("serviceItemsTitle");
+  const summaryEl      = document.getElementById("serviceItemsSummary");
+  const containerEl    = document.getElementById("serviceItemsContainer");
 
-  const cardsSection = document.getElementById("statsCardsSection");
-  const tableSection = document.getElementById("statsTableSection");
-  const viewToggle = document.getElementById("statsViewToggle");
-  const serviceSection = document.getElementById("serviceItemsSection");
-  const titleEl = document.getElementById("serviceItemsTitle");
-  const summaryEl = document.getElementById("serviceItemsSummary");
-  const containerEl = document.getElementById("serviceItemsContainer");
+  if (!serviceRow || serviceRow.service_id == null) {
+    currentService = null;
+    if (itemsSection) itemsSection.style.display = "none";
+    if (cardsSection) cardsSection.style.display = "";
+    if (tableSection) tableSection.style.display = "";
+    return;
+  }
 
-  if (!serviceSection || !summaryEl || !containerEl) return;
+  currentService = serviceRow;
 
-  previousView = currentView;
-
-  // hide main stats views
   if (cardsSection) cardsSection.style.display = "none";
   if (tableSection) tableSection.style.display = "none";
-  if (viewToggle) viewToggle.style.display = "none";
+  if (itemsSection) itemsSection.style.display = "";
 
-  // show items section
-  serviceSection.style.display = "";
+  if (containerEl) containerEl.innerHTML = "";
+  if (summaryEl) summaryEl.textContent = "Loading items…";
 
-  if (titleEl) {
-    titleEl.textContent = `Items on ${serviceName}`;
-  }
-  summaryEl.textContent = "Loading…";
-  containerEl.innerHTML = "";
+  const serviceName = serviceRow.service_name || "Unknown";
+  if (titleEl) titleEl.textContent = `Items on ${serviceName}`;
 
+  let items;
   try {
-    const items = await fetchJson(
-      `api/stats_service_items.php?service_id=${encodeURIComponent(
-        serviceId
-      )}`
-    );
-
-    if (!Array.isArray(items) || items.length === 0) {
-      summaryEl.textContent = "No items found for this service.";
-      return;
-    }
-
-    // build cards like the main films list
-    for (const item of items) {
-      const row = document.createElement("div");
-      row.className = "card-row";
-
-      const main = document.createElement("div");
-      main.className = "card-main";
-
-      const title = document.createElement("div");
-      title.className = "card-title";
-      title.textContent = item.title || "Untitled";
-      main.appendChild(title);
-
-      const sub = document.createElement("div");
-      sub.className = "card-sub";
-      const listName = item.list_name || "Unknown list";
-      const year = item.year ? ` · ${item.year}` : "";
-      sub.textContent = `${listName}${year}`;
-      main.appendChild(sub);
-
-      row.appendChild(main);
-
-      const meta = document.createElement("div");
-      meta.className = "card-meta";
-
-      meta.appendChild(createServicePill(item));
-      row.appendChild(meta);
-
-      // watched progress bar (0% or 100%)
-      const outer = document.createElement("div");
-      outer.className = "list-progress-outer";
-
-      const inner = document.createElement("div");
-      inner.className = "list-progress-inner";
-      const watched = item.watched_at != null;
-      inner.style.width = watched ? "100%" : "0%";
-
-      outer.appendChild(inner);
-      row.appendChild(outer);
-
-      containerEl.appendChild(row);
-    }
-
-    summaryEl.textContent = `${items.length} item${
-      items.length === 1 ? "" : "s"
-    } on this service.`;
+    const qs = new URLSearchParams({ service_id: serviceRow.service_id });
+    items = await fetchJson(`api/stats_service_items.php?${qs.toString()}`);
   } catch (err) {
     console.error(err);
-    summaryEl.textContent = "Error loading items for this service.";
+    if (summaryEl) summaryEl.textContent = "Error loading items.";
+    return;
+  }
+
+  if (!Array.isArray(items) || items.length === 0) {
+    if (summaryEl) summaryEl.textContent = "No items found for this service.";
+    return;
+  }
+
+  if (summaryEl) {
+    summaryEl.textContent = `${items.length} item${
+      items.length !== 1 ? "s" : ""
+    } on this service.`;
+  }
+
+  for (const item of items) {
+    const row = document.createElement("div");
+    row.className = "card-row";
+
+    // make the whole row clickable - jump to main film detail
+    row.addEventListener("click", () => {
+      if (item.id != null) {
+        const filmId = encodeURIComponent(item.id);
+        window.location.href = `/?f=${filmId}`;
+      }
+    });
+
+    const main = document.createElement("div");
+    main.className = "card-main";
+
+    const textWrap = document.createElement("div");
+
+    const title = document.createElement("div");
+    title.className = "card-title";
+    title.textContent = item.title;
+    textWrap.appendChild(title);
+
+    const subtitle = document.createElement("div");
+    subtitle.className = "card-sub";
+    subtitle.textContent = item.list_name || "";
+    textWrap.appendChild(subtitle);
+
+    main.appendChild(textWrap);
+
+    const meta = document.createElement("div");
+    meta.className = "card-meta";
+    meta.appendChild(createServicePill(item));
+    main.appendChild(meta);
+
+    row.appendChild(main);
+
+    const progressOuter = document.createElement("div");
+    progressOuter.className = "list-progress-outer";
+
+    const progressInner = document.createElement("div");
+    progressInner.className = "list-progress-inner";
+    const isWatched = !!item.watched_at;
+    progressInner.style.width = isWatched ? "100%" : "0%";
+
+    progressOuter.appendChild(progressInner);
+    row.appendChild(progressOuter);
+
+    containerEl.appendChild(row);
   }
 }
 
