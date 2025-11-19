@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Films to Watch – Recent Changes</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <button class="back-button" onclick="window.location.href='index.html'">
+        ← Back
+      </button>
+      <h1>Recent changes</h1>
+    </header>
+
+    <main class="app-main">
+      <section class="stats-header constrained">
+        <p id="changesSummary" class="stats-note">
+          Loading recent activity…
+        </p>
+      </section>
+
+      <section class="view-toggle constrained">
+        <!-- could add filters later if you want -->
+      </section>
+
+      <section id="changesList" class="constrained"></section>
+
+      <p id="changesStatus" class="stats-note constrained"></p>
+    </main>
+
+    <script src="changes.js"></script>
+  </body>
+</html>

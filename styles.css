@@ -166,6 +166,7 @@ main {
   border-radius: 999px;
   padding: 0.45rem 0.9rem;
   font-size: 0.95rem;
+  font-weight: 600;
   background: #a04b00;
   color: #f9fafb;
   cursor: pointer;
@@ -190,6 +191,7 @@ main {
   border-radius: 999px;
   padding: 0.45rem 0.9rem;
   font-size: 0.95rem;
+  font-weight: 600;
   background: #a04b00;
   color: #f9fafb;
   cursor: pointer;
@@ -213,6 +215,7 @@ main {
   border-radius: 999px;
   padding: 0.45rem 0.9rem;
   font-size: 0.95rem;
+  font-weight: 600;
   background: #a04b00;
   color: #f9fafb;
   cursor: pointer;
@@ -238,6 +241,7 @@ main {
   border-radius: 999px;
   padding: 0.45rem 0.9rem;
   font-size: 0.95rem;
+  font-weight: 600;
   background: #a04b00;
   color: #f9fafb;
   cursor: pointer;
@@ -587,4 +591,55 @@ table.stats-table tbody tr:nth-child(even) {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+}
+
+.changes-date-heading {
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  opacity: 0.8;
+}
+
+/* Container for primary + secondary actions */
+.lists-actions {
+  margin-top: 1.25rem;
+}
+
+/* Row that holds the two half-width buttons */
+.lists-secondary-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+/* Make the links look like the big orange pill, but half width */
+.lists-secondary-actions .secondary-pill {
+  flex: 1 1 0;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+
+  background: var(--list-progress-color, #a04b00);
+  color: #ffffff;
+  text-decoration: none;
+  border: none;
+
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  transition: background 0.15s ease, transform 0.05s ease;
+}
+
+.lists-secondary-actions .secondary-pill:hover {
+  background: #c25d00;
+}
+
+.lists-secondary-actions .secondary-pill:active {
+  transform: translateY(1px);
 }
