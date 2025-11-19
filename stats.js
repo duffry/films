@@ -2,9 +2,16 @@
 
 let serviceRows = [];
 let totals = { items: 0, watched: 0, unwatched: 0 };
-
 let currentView = "watched";
-let currentTableSort = "pctTotal"; // default table sort = % T
+
+// table sort state
+let tableSort = {
+  field: "percentTotal",
+  direction: "desc",
+};
+
+// remember what view we were on before drilling into a service
+let previousView = "watched";
 
 // ---------- helpers ----------
 
@@ -26,43 +33,6 @@ async function fetchJson(url, options) {
 function formatPct(value) {
   if (!isFinite(value) || isNaN(value)) return "–";
   return `${value.toFixed(1)}%`;
-}
-
-/**
- * Take raw serviceRows and totals and return a list with
- * numeric counts + percentage metrics we can reuse in
- * both cards and table.
- */
-function getServiceMetrics() {
-  const totalWatched = totals.watched;
-  const totalUnwatched = totals.unwatched;
-  const totalItems = totals.items;
-
-  return serviceRows.map((r) => {
-    const service_name = r.service_name || "Unknown / not set";
-    const watched = Number(r.watched_count) || 0;
-    const unwatched = Number(r.unwatched_count) || 0;
-    const total = Number(r.total_count) || 0;
-
-    const pctWatched = totalWatched
-      ? (watched / totalWatched) * 100
-      : NaN;
-    const pctUnwatched = totalUnwatched
-      ? (unwatched / totalUnwatched) * 100
-      : NaN;
-    const pctTotal = totalItems ? (total / totalItems) * 100 : NaN;
-
-    return {
-      raw: r, // original row for service_code, id, etc.
-      service_name,
-      watched,
-      unwatched,
-      total,
-      pctWatched,
-      pctUnwatched,
-      pctTotal,
-    };
-  });
 }
 
 function createServicePill(row) {
@@ -99,123 +69,148 @@ function createServicePill(row) {
   return span;
 }
 
+function getColumnTotalForView(view) {
+  if (view === "watched") return totals.watched;
+  if (view === "unwatched") return totals.unwatched;
+  return totals.items;
+}
+
+function getValueForRowView(row, view) {
+  const watched = Number(row.watched_count) || 0;
+  const unwatched = Number(row.unwatched_count) || 0;
+  const total = Number(row.total_count) || 0;
+
+  if (view === "watched") return watched;
+  if (view === "unwatched") return unwatched;
+  return total;
+}
+
 // ---------- table view ----------
 
-function buildTable(sortKey = currentTableSort) {
-  currentTableSort = sortKey;
-
+function buildTable() {
   const body = document.getElementById("serviceStatsBody");
   if (!body) return;
+
   body.innerHTML = "";
 
-  const metrics = getServiceMetrics();
+  // pre-compute the percentages for sorting
+  const rowsWithPct = serviceRows.map((r) => {
+    const watched = Number(r.watched_count) || 0;
+    const unwatched = Number(r.unwatched_count) || 0;
+    const total = Number(r.total_count) || 0;
 
-  // Decide which property to sort on
-  const mapSortKey = (key) => {
-    switch (key) {
-      case "service":
-        return "service_name";
-      case "watched":
-        return "watched";
-      case "percentWatched":
-        return "pctWatched";
-      case "unwatched":
-        return "unwatched";
-      case "percentUnwatched":
-        return "pctUnwatched";
-      case "total":
-        return "total";
-      case "percentTotal":
-      default:
-        return "pctTotal";
-    }
-  };
+    const percentWatched = totals.watched
+      ? (watched / totals.watched) * 100
+      : NaN;
+    const percentUnwatched = totals.unwatched
+      ? (unwatched / totals.unwatched) * 100
+      : NaN;
+    const percentTotal = totals.items ? (total / totals.items) * 100 : NaN;
 
-  const internalKey = mapSortKey(sortKey);
-
-  const sorted = [...metrics].sort((a, b) => {
-    if (internalKey === "service_name") {
-      return a.service_name.localeCompare(b.service_name);
-    }
-    const aval = a[internalKey];
-    const bval = b[internalKey];
-    const an = isFinite(aval) ? aval : -Infinity;
-    const bn = isFinite(bval) ? bval : -Infinity;
-    return bn - an; // numeric, descending
+    return {
+      ...r,
+      watched,
+      unwatched,
+      total,
+      percentWatched,
+      percentUnwatched,
+      percentTotal,
+    };
   });
 
-  for (const m of sorted) {
+  // sort according to tableSort
+  rowsWithPct.sort((a, b) => {
+    const field = tableSort.field;
+
+    let av = a[field];
+    let bv = b[field];
+
+    // NaNs to bottom
+    if (!isFinite(av)) av = -Infinity;
+    if (!isFinite(bv)) bv = -Infinity;
+
+    if (av === bv) return 0;
+
+    const dir = tableSort.direction === "asc" ? 1 : -1;
+    return av > bv ? dir : -dir;
+  });
+
+  for (const r of rowsWithPct) {
+    const serviceName = r.service_name || "Unknown / not set";
+
+    const watchedPct = r.percentWatched;
+    const unwatchedPct = r.percentUnwatched;
+    const totalPct = r.percentTotal;
+
     const tr = document.createElement("tr");
 
     const tdService = document.createElement("td");
-    tdService.textContent = m.service_name;
-    if (!m.raw.service_id || m.raw.service_id === 0) {
+    tdService.textContent = serviceName;
+    if (!r.service_id || r.service_id === 0) {
       tdService.classList.add("badge-unknown");
     }
     tr.appendChild(tdService);
 
     const tdWatched = document.createElement("td");
-    tdWatched.textContent = m.watched.toString();
+    tdWatched.textContent = r.watched.toString();
     tr.appendChild(tdWatched);
 
     const tdWatchedPct = document.createElement("td");
-    tdWatchedPct.textContent = formatPct(m.pctWatched);
+    tdWatchedPct.textContent = formatPct(watchedPct);
     tr.appendChild(tdWatchedPct);
 
     const tdUnwatched = document.createElement("td");
-    tdUnwatched.textContent = m.unwatched.toString();
+    tdUnwatched.textContent = r.unwatched.toString();
     tr.appendChild(tdUnwatched);
 
     const tdUnwatchedPct = document.createElement("td");
-    tdUnwatchedPct.textContent = formatPct(m.pctUnwatched);
+    tdUnwatchedPct.textContent = formatPct(unwatchedPct);
     tr.appendChild(tdUnwatchedPct);
 
     const tdTotal = document.createElement("td");
-    tdTotal.textContent = m.total.toString();
+    tdTotal.textContent = r.total.toString();
     tr.appendChild(tdTotal);
 
     const tdTotalPct = document.createElement("td");
-    tdTotalPct.textContent = formatPct(m.pctTotal);
+    tdTotalPct.textContent = formatPct(totalPct);
     tr.appendChild(tdTotalPct);
 
     body.appendChild(tr);
   }
 }
 
-// ---------- card view ----------
+// ---------- cards view ----------
 
 function renderCards(view) {
-  currentView = view;
-
   const listEl = document.getElementById("serviceCardList");
   if (!listEl) return;
+
   listEl.innerHTML = "";
 
-  const metrics = getServiceMetrics();
+  const label =
+    view === "watched"
+      ? "watched"
+      : view === "unwatched"
+      ? "unwatched"
+      : "items";
 
-  let pctKey;
-  if (view === "watched") pctKey = "pctWatched";
-  else if (view === "unwatched") pctKey = "pctUnwatched";
-  else pctKey = "pctTotal";
+  const columnTotal = getColumnTotalForView(view);
 
-  const sorted = [...metrics].sort((a, b) => {
-    const aval = a[pctKey];
-    const bval = b[pctKey];
-    const an = isFinite(aval) ? aval : -Infinity;
-    const bn = isFinite(bval) ? bval : -Infinity;
-    return bn - an; // highest percentage first
+  // build array with value & pct for sorting and display
+  const rowsWithPct = serviceRows.map((r) => {
+    const value = getValueForRowView(r, view);
+    const pct = columnTotal && value ? (value / columnTotal) * 100 : 0;
+    return { row: r, value, pct };
   });
 
-  for (const m of sorted) {
-    const r = m.raw;
-    const serviceName = m.service_name;
-    const watched = m.watched;
-    const unwatched = m.unwatched;
-    const total = m.total;
-    const pctOfColumn = m[pctKey];
-    const safePct = isFinite(pctOfColumn)
-      ? Math.max(0, Math.min(100, pctOfColumn))
-      : 0;
+  // sort by share of column, desc
+  rowsWithPct.sort((a, b) => b.pct - a.pct);
+
+  for (const { row: r, value, pct } of rowsWithPct) {
+    const serviceName = r.service_name || "Unknown / not set";
+    const watched = Number(r.watched_count) || 0;
+    const unwatched = Number(r.unwatched_count) || 0;
+    const total = Number(r.total_count) || 0;
 
     const card = document.createElement("article");
     card.className = "card service-card";
@@ -234,16 +229,16 @@ function renderCards(view) {
     subtitleEl.className = "card-subtitle";
 
     if (view === "watched") {
-      subtitleEl.textContent = `${watched} :  ${formatPct(
-        pctOfColumn
+      subtitleEl.textContent = `${watched} out of ${total} watched, ${formatPct(
+        pct
       )} of all watched items`;
     } else if (view === "unwatched") {
-      subtitleEl.textContent = `${unwatched} :  ${formatPct(
-        pctOfColumn
+      subtitleEl.textContent = `${unwatched} out of ${total} unwatched, ${formatPct(
+        pct
       )} of all unwatched items`;
     } else {
-      subtitleEl.textContent = `${total} :  ${formatPct(
-        pctOfColumn
+      subtitleEl.textContent = `${total} items, ${formatPct(
+        pct
       )} of all items`;
     }
 
@@ -262,13 +257,125 @@ function renderCards(view) {
 
     const inner = document.createElement("div");
     inner.className = "progress-inner";
-    inner.style.width = `${safePct}%`;
+    inner.style.width = `${Math.max(0, Math.min(100, pct))}%`;
 
     progressBar.appendChild(inner);
     card.appendChild(progressBar);
 
+    // clicking the card opens the "items on this service" view
+    card.addEventListener("click", () => openServiceItems(r));
+
     listEl.appendChild(card);
   }
+}
+
+// ---------- service items view ----------
+
+async function openServiceItems(serviceRow) {
+  const serviceId = serviceRow.service_id;
+  const serviceName = serviceRow.service_name || "Unknown / not set";
+
+  const cardsSection = document.getElementById("statsCardsSection");
+  const tableSection = document.getElementById("statsTableSection");
+  const viewToggle = document.getElementById("statsViewToggle");
+  const serviceSection = document.getElementById("serviceItemsSection");
+  const titleEl = document.getElementById("serviceItemsTitle");
+  const summaryEl = document.getElementById("serviceItemsSummary");
+  const containerEl = document.getElementById("serviceItemsContainer");
+
+  if (!serviceSection || !summaryEl || !containerEl) return;
+
+  previousView = currentView;
+
+  // hide main stats views
+  if (cardsSection) cardsSection.style.display = "none";
+  if (tableSection) tableSection.style.display = "none";
+  if (viewToggle) viewToggle.style.display = "none";
+
+  // show items section
+  serviceSection.style.display = "";
+
+  if (titleEl) {
+    titleEl.textContent = `Items on ${serviceName}`;
+  }
+  summaryEl.textContent = "Loading…";
+  containerEl.innerHTML = "";
+
+  try {
+    const items = await fetchJson(
+      `api/stats_service_items.php?service_id=${encodeURIComponent(
+        serviceId
+      )}`
+    );
+
+    if (!Array.isArray(items) || items.length === 0) {
+      summaryEl.textContent = "No items found for this service.";
+      return;
+    }
+
+    // build cards like the main films list
+    for (const item of items) {
+      const row = document.createElement("div");
+      row.className = "card-row";
+
+      const main = document.createElement("div");
+      main.className = "card-main";
+
+      const title = document.createElement("div");
+      title.className = "card-title";
+      title.textContent = item.title || "Untitled";
+      main.appendChild(title);
+
+      const sub = document.createElement("div");
+      sub.className = "card-sub";
+      const listName = item.list_name || "Unknown list";
+      const year = item.year ? ` · ${item.year}` : "";
+      sub.textContent = `${listName}${year}`;
+      main.appendChild(sub);
+
+      row.appendChild(main);
+
+      const meta = document.createElement("div");
+      meta.className = "card-meta";
+
+      meta.appendChild(createServicePill(item));
+      row.appendChild(meta);
+
+      // watched progress bar (0% or 100%)
+      const outer = document.createElement("div");
+      outer.className = "list-progress-outer";
+
+      const inner = document.createElement("div");
+      inner.className = "list-progress-inner";
+      const watched = item.watched_at != null;
+      inner.style.width = watched ? "100%" : "0%";
+
+      outer.appendChild(inner);
+      row.appendChild(outer);
+
+      containerEl.appendChild(row);
+    }
+
+    summaryEl.textContent = `${items.length} item${
+      items.length === 1 ? "" : "s"
+    } on this service.`;
+  } catch (err) {
+    console.error(err);
+    summaryEl.textContent = "Error loading items for this service.";
+  }
+}
+
+function goBackToStatsMain() {
+  const cardsSection = document.getElementById("statsCardsSection");
+  const tableSection = document.getElementById("statsTableSection");
+  const viewToggle = document.getElementById("statsViewToggle");
+  const serviceSection = document.getElementById("serviceItemsSection");
+
+  if (serviceSection) serviceSection.style.display = "none";
+  if (viewToggle) viewToggle.style.display = "";
+
+  // restore whichever main view we were on
+  setView(previousView || "watched");
 }
 
 // ---------- view switching ----------
@@ -278,11 +385,19 @@ function setView(view) {
 
   const cardsSection = document.getElementById("statsCardsSection");
   const tableSection = document.getElementById("statsTableSection");
+  const serviceSection = document.getElementById("serviceItemsSection");
+  const viewToggle = document.getElementById("statsViewToggle");
 
+  // if we were in service-detail view, hide it and bring back the toggle row
+  if (serviceSection && serviceSection.style.display !== "none") {
+    serviceSection.style.display = "none";
+    if (viewToggle) viewToggle.style.display = "";
+  }
+
+  // toggle button active state
   document
     .querySelectorAll(".toggle-button")
     .forEach((btn) => btn.classList.remove("active"));
-
   const activeBtn = document.querySelector(
     `.toggle-button[data-view="${view}"]`
   );
@@ -291,8 +406,7 @@ function setView(view) {
   if (view === "table") {
     if (cardsSection) cardsSection.style.display = "none";
     if (tableSection) tableSection.style.display = "";
-
-    buildTable(currentTableSort);
+    buildTable();
   } else {
     if (tableSection) tableSection.style.display = "none";
     if (cardsSection) cardsSection.style.display = "";
@@ -339,14 +453,16 @@ async function loadServiceStats() {
       `unwatched: ${totals.unwatched}`;
   }
 
-  buildTable(currentTableSort); // prepares the table (default %T)
-  setView("watched"); // shows cards by default
+  // default table sort is by % T desc
+  tableSort = { field: "percentTotal", direction: "desc" };
+
+  setView("watched");
 }
 
-// ---------- init ----------
+// ---------- wiring ----------
 
 document.addEventListener("DOMContentLoaded", () => {
-  // View toggle buttons
+  // main view toggle buttons
   document.querySelectorAll(".toggle-button").forEach((btn) => {
     btn.addEventListener("click", () => {
       const view = btn.dataset.view;
@@ -355,16 +471,31 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Table header sort handlers (based on data-sort attributes)
-  const bodyEl = document.getElementById("serviceStatsBody");
-  const table = bodyEl ? bodyEl.closest("table") : null;
-  if (table) {
-    table.querySelectorAll("thead th[data-sort]").forEach((th) => {
+  // table header sort
+  document
+    .querySelectorAll(".stats-table th[data-sort]")
+    .forEach((th) => {
       th.addEventListener("click", () => {
-        const key = th.dataset.sort;
-        if (!key) return;
-        buildTable(key);
+        const field = th.dataset.sort;
+        if (!field) return;
+
+        // simple toggle asc/desc on repeat click
+        if (tableSort.field === field) {
+          tableSort.direction = tableSort.direction === "asc" ? "desc" : "asc";
+        } else {
+          tableSort.field = field;
+          tableSort.direction = "desc";
+        }
+        buildTable();
       });
+    });
+
+  // back from service items view
+  const backBtn = document.getElementById("serviceItemsBack");
+  if (backBtn) {
+    backBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      goBackToStatsMain();
     });
   }
 

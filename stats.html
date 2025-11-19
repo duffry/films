@@ -8,7 +8,7 @@
 </head>
 <body>
   <header class="app-header">
-    <button type="button" class="back-button" onclick="history.back()">← Back</button>
+    <button id="backButton" type="button" onclick="history.back()">← Back</button>
     <h1>Films to Watch – Stats</h1>
   </header>
 
@@ -18,9 +18,8 @@
       <p class="stats-summary" id="statsSummary">Loading…</p>
     </section>
 
-    <div class="view-toggle">
+    <div id="statsViewToggle" class="view-toggle">
       <button class="toggle-button active" data-view="watched">Watched</button>
-      <button class="toggle-button" data-view="unwathed" style="display:none"></button>
       <button class="toggle-button" data-view="unwatched">Unwatched</button>
       <button class="toggle-button" data-view="total">Total</button>
       <button class="toggle-button" data-view="table">Table</button>
@@ -59,7 +58,24 @@
       </p>
     </section>
 
-    <p id="statsStatus" class="stats-note"></p>
+    <!-- Service items view (hidden by default) -->
+    <section id="serviceItemsSection" style="display: none;">
+    <div class="section-header stats-header">
+        <h2 id="serviceItemsTitle">Items on service</h2>
+        <div class="section-header-meta">
+        <button id="serviceItemsBack" type="button">
+            ← Back to stats
+        </button>
+        </div>
+    </div>
+
+    <p id="serviceItemsSummary" class="status-text stats-header"></p>
+    <!-- add card-list here -->
+    <div id="serviceItemsContainer" class="card-list"></div>
+    </section>
+
+
+    <p id="statsStatus" class="stats-note stats-header"></p>
   </main>
 
   <script src="stats.js"></script>
