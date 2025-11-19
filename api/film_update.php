@@ -37,24 +37,44 @@ $watchedAt = $input['watched_at'] ?? null;
 if ($watchedAt === '' || $watchedAt === null) {
     $watchedAt = null;
 } else {
-    // Basic YYYY-MM-DD check
     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $watchedAt)) {
         json_response(['error' => 'Invalid watched_at date'], 422);
+    }
+}
+
+$serviceId = $input['service_id'] ?? null;
+if ($serviceId === '' || $serviceId === null) {
+    $serviceId = null;
+} else {
+    $serviceId = (int)$serviceId;
+    if ($serviceId <= 0) {
+        $serviceId = null;
     }
 }
 
 try {
     $stmt = $pdo->prepare(
         'UPDATE films
-         SET title = ?, year = ?, notes = ?, watched_at = ?
+         SET title = ?, year = ?, notes = ?, watched_at = ?, service_id = ?
          WHERE id = ?'
     );
-    $stmt->execute([$title, $year, $notes, $watchedAt, $filmId]);
+    $stmt->execute([$title, $year, $notes, $watchedAt, $serviceId, $filmId]);
 
     $stmt2 = $pdo->prepare(
-        'SELECT id, list_id, title, year, notes, watched_at, display_order
-         FROM films
-         WHERE id = ?'
+        'SELECT
+             f.id,
+             f.list_id,
+             f.title,
+             f.year,
+             f.notes,
+             f.watched_at,
+             f.display_order,
+             f.service_id,
+             s.name AS service_name,
+             s.code AS service_code
+         FROM films f
+         LEFT JOIN services s ON f.service_id = s.id
+         WHERE f.id = ?'
     );
     $stmt2->execute([$filmId]);
     $film = $stmt2->fetch();

@@ -50,6 +50,7 @@
         <h2 id="detailTitle"></h2>
 
         <p id="detailYear"></p>
+        <p id="detailService"></p>
         <p id="detailWatched"></p>
         <p id="detailNotes"></p>
 
@@ -75,6 +76,14 @@
               inputmode="numeric"
               placeholder="Leave blank if unknown"
             />
+          </label>
+
+          <label>
+            Service
+            <select id="editService">
+              <option value="">(Not set)</option>
+              <!-- JS will populate the rest -->
+            </select>
           </label>
 
           <label class="detail-edit-date-row">

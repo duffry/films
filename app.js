@@ -23,6 +23,7 @@ const addFilmButton = document.getElementById("addFilmButton");
 // Film detail view
 const detailTitle = document.getElementById("detailTitle");
 const detailYear = document.getElementById("detailYear");
+const detailService = document.getElementById("detailService");
 const detailWatched = document.getElementById("detailWatched");
 const detailNotes = document.getElementById("detailNotes");
 const detailMarkWatched = document.getElementById("detailMarkWatched");
@@ -37,6 +38,7 @@ const editClearWatchedButton = document.getElementById("editClearWatched");
 const editNotesInput = document.getElementById("editNotes");
 const editCancelButton = document.getElementById("editCancel");
 const editSaveButton = document.getElementById("editSave");
+const editServiceSelect = document.getElementById("editService");
 
 // ===== GLOBAL STATE =====
 const basePath = window.location.pathname.replace(/index\.html$/, "");
@@ -46,6 +48,7 @@ let currentLists = [];
 let currentList = null;
 let currentFilms = [];
 let currentFilm = null;
+let availableServices = [];
 
 // ===== HELPER FUNCTIONS =====
 async function fetchJson(url, options) {
@@ -79,6 +82,34 @@ function updateBackButton() {
   const atRoot = currentView === "lists" && !params.get("l") && !params.get("f");
   backButton.disabled = atRoot;
   backButton.classList.toggle("back-disabled", atRoot);
+}
+
+async function loadServices() {
+  try {
+    const services = await fetchJson("api/services.php");
+    availableServices = services;
+    populateServiceOptions();
+  } catch (err) {
+    console.error("Error loading services", err);
+  }
+}
+
+function populateServiceOptions() {
+  if (!editServiceSelect) return;
+
+  editServiceSelect.innerHTML = "";
+
+  const optNone = document.createElement("option");
+  optNone.value = "";
+  optNone.textContent = "(Not set)";
+  editServiceSelect.appendChild(optNone);
+
+  availableServices.forEach((svc) => {
+    const opt = document.createElement("option");
+    opt.value = String(svc.id);
+    opt.textContent = svc.name;
+    editServiceSelect.appendChild(opt);
+  });
 }
 
 // ===== BACK BUTTON =====
@@ -239,18 +270,31 @@ async function loadFilmsForList(list) {
 
       const meta = document.createElement("div");
       meta.className = "card-meta";
-      const span = document.createElement("span");
-      if (film.watched_at) {
-        span.textContent = "✓";
-        span.className = "watched-yes";
+
+      const svcSpan = document.createElement("span");
+      svcSpan.className = "service-pill";
+      if (film.service_name) {
+        svcSpan.textContent = film.service_name.charAt(0).toUpperCase();
       } else {
-        span.textContent = "✗";
-        span.className = "watched-no";
+        svcSpan.textContent = "?";
+        svcSpan.classList.add("service-unknown");
       }
-      meta.appendChild(span);
+      meta.appendChild(svcSpan);
 
       row.appendChild(main);
       row.appendChild(meta);
+
+      // bottom progress bar – 0% or 100%
+      const progressOuter = document.createElement("div");
+      progressOuter.className = "list-progress-outer";
+
+      const progressInner = document.createElement("div");
+      progressInner.className = "list-progress-inner";
+      const pct = film.watched_at ? 100 : 0;
+      progressInner.style.width = `${pct}%`;
+
+      progressOuter.appendChild(progressInner);
+      row.appendChild(progressOuter);
 
       row.addEventListener("click", () => openFilmDetail(film));
 
@@ -265,6 +309,7 @@ async function loadFilmsForList(list) {
     if (filmsStatus) filmsStatus.textContent = "Error loading films.";
   }
 }
+
 
 function openList(list, options = {}) {
   currentList = list;
@@ -359,6 +404,15 @@ function renderCurrentFilm() {
       ? `Year: ${currentFilm.year}`
       : "";
   }
+
+  if (detailService) {
+    if (currentFilm.service_name) {
+      detailService.textContent = `Service: ${currentFilm.service_name}`;
+    } else {
+      detailService.textContent = ""; // or 'Service: (not set)'
+    }
+  }
+  
   if (detailNotes) detailNotes.textContent = currentFilm.notes || "No notes yet.";
   updateDetailWatchedUI();
 }
@@ -429,6 +483,18 @@ function enterEditMode() {
   if (editWatchedInput)
     editWatchedInput.value = currentFilm.watched_at || "";
 
+  if (availableServices.length && editServiceSelect) {
+    populateServiceOptions();
+  }
+
+  if (editServiceSelect) {
+    const sid =
+      currentFilm.service_id !== null && currentFilm.service_id !== undefined
+        ? String(currentFilm.service_id)
+        : "";
+    editServiceSelect.value = sid;
+  }
+
   detailEditForm.hidden = false;
   if (detailEditButton) detailEditButton.disabled = true;
 }
@@ -464,6 +530,9 @@ async function handleEditSubmit(event) {
     editWatchedInput && editWatchedInput.value
       ? editWatchedInput.value
       : null;
+  const serviceIdStr = editServiceSelect ? editServiceSelect.value : "";
+  const service_id =
+    serviceIdStr && serviceIdStr !== "" ? parseInt(serviceIdStr, 10) : null;
 
   if (editSaveButton) {
     editSaveButton.disabled = true;
@@ -481,6 +550,7 @@ async function handleEditSubmit(event) {
         year,
         notes,
         watched_at: watchedAt,
+        service_id: service_id,
       }),
     });
 
@@ -579,9 +649,11 @@ async function initFromUrl() {
 
 // ===== INIT =====
 document.addEventListener("DOMContentLoaded", () => {
+  loadServices();      // fire-and-forget; form uses it later
   initFromUrl();
 
   window.addEventListener("popstate", () => {
     initFromUrl();
   });
 });
+
