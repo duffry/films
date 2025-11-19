@@ -234,11 +234,11 @@ function renderCards(view) {
     subtitleEl.className = "card-subtitle";
 
     if (view === "watched") {
-      subtitleEl.textContent = `${watched}/${total}, ${formatPct(
+      subtitleEl.textContent = `${watched}, ${formatPct(
         pctOfColumn
       )} of all watched items`;
     } else if (view === "unwatched") {
-      subtitleEl.textContent = `${unwatched}/${total}, ${formatPct(
+      subtitleEl.textContent = `${unwatched}, ${formatPct(
         pctOfColumn
       )} of all unwatched items`;
     } else {
