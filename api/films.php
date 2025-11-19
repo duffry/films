@@ -22,8 +22,8 @@ try {
              f.watched_at,
              f.display_order,
              f.service_id,
-             s.name AS service_name,
-             s.code AS service_code
+             COALESCE(s.name, "Unknown") AS service_name,
+             COALESCE(s.code, "unknown") AS service_code
          FROM films f
          LEFT JOIN services s ON f.service_id = s.id
          WHERE f.list_id = ?

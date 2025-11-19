@@ -39,10 +39,11 @@ function createServicePill(row) {
   const span = document.createElement("span");
   span.className = "service-pill";
 
-  const serviceName = row.service_name || "Unknown / not set";
+  const serviceName = row.service_name || "Unknown";
   const code = row.service_code;
 
-  if (code && code !== "unknown") {
+//   if (code && code !== "unknown") {
+  if (code) {
     const img = document.createElement("img");
     img.className = "service-icon-img";
     img.src = `img/${code}.png`;
@@ -136,7 +137,7 @@ function buildTable() {
   });
 
   for (const r of rowsWithPct) {
-    const serviceName = r.service_name || "Unknown / not set";
+    const serviceName = r.service_name || "Unknown";
 
     const watchedPct = r.percentWatched;
     const unwatchedPct = r.percentUnwatched;
@@ -207,7 +208,7 @@ function renderCards(view) {
   rowsWithPct.sort((a, b) => b.pct - a.pct);
 
   for (const { row: r, value, pct } of rowsWithPct) {
-    const serviceName = r.service_name || "Unknown / not set";
+    const serviceName = r.service_name || "Unknown";
     const watched = Number(r.watched_count) || 0;
     const unwatched = Number(r.unwatched_count) || 0;
     const total = Number(r.total_count) || 0;
@@ -229,7 +230,7 @@ function renderCards(view) {
     subtitleEl.className = "card-subtitle";
 
     if (view === "watched") {
-      subtitleEl.textContent = `${watched} out of ${total} watched, ${formatPct(
+      subtitleEl.textContent = `${watched} watched of ${total} ${serviceName}, ${formatPct(
         pct
       )} of all watched items`;
     } else if (view === "unwatched") {
@@ -273,7 +274,7 @@ function renderCards(view) {
 
 async function openServiceItems(serviceRow) {
   const serviceId = serviceRow.service_id;
-  const serviceName = serviceRow.service_name || "Unknown / not set";
+  const serviceName = serviceRow.service_name || "Unknown";
 
   const cardsSection = document.getElementById("statsCardsSection");
   const tableSection = document.getElementById("statsTableSection");

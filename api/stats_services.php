@@ -10,7 +10,7 @@ try {
     $stmt = $pdo->query(
         'SELECT
              COALESCE(s.id, 0) AS service_id,
-             COALESCE(s.name, "Unknown / not set") AS service_name,
+             COALESCE(s.name, "Unknown") AS service_name,
              COALESCE(s.code, "unknown") AS service_code,
              COUNT(f.id) AS total_count,
              SUM(CASE WHEN f.watched_at IS NOT NULL THEN 1 ELSE 0 END) AS watched_count,

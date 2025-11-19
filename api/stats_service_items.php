@@ -13,7 +13,7 @@ if ($serviceId < 0) {
 
 try {
     if ($serviceId === 0) {
-        // "Unknown / not set": films where service_id IS NULL
+        // "Unknown": films where service_id IS NULL
         $sql = '
             SELECT
                 f.id,
@@ -22,7 +22,7 @@ try {
                 l.id   AS list_id,
                 l.name AS list_name,
                 NULL   AS service_id,
-                "Unknown / not set" AS service_name,
+                "Unknown" AS service_name,
                 "unknown" AS service_code
             FROM films f
             JOIN lists l ON f.list_id = l.id
