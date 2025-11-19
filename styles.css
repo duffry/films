@@ -345,29 +345,28 @@ main {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.8rem;
-  height: 1.8rem;
+  width: 2rem;          /* fixed circle */
+  height: 2rem;
   border-radius: 999px;
   border: 1px solid #555;
+  background: #222;
+  color: #ddd;
   font-size: 0.9rem;
   font-weight: 600;
   text-transform: uppercase;
-  color: #ddd;
-  background: #222;
+  overflow: hidden;     /* hide any overflow from the img */
+  padding: 0;
+}
+
+.service-pill img.service-icon-img {
+  width: 1.4rem;        /* explicit size */
+  height: 1.4rem;
+  object-fit: contain;  /* keep aspect ratio inside the box */
+  display: block;
 }
 
 .service-unknown {
   opacity: 0.5;
 }
 
-/* service select in edit form */
-.detail-edit select {
-  width: 100%;
-  margin-top: 0.25rem;
-  padding: 0.5rem 0.6rem;
-  border-radius: 8px;
-  border: 1px solid #444;
-  background: #111;
-  color: #f5f5f5;
-  box-sizing: border-box;
-}
+

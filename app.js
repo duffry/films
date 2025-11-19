@@ -273,12 +273,35 @@ async function loadFilmsForList(list) {
 
       const svcSpan = document.createElement("span");
       svcSpan.className = "service-pill";
-      if (film.service_name) {
+
+      if (film.service_code) {
+        // try to show an icon: ./img/<code>.png
+        const img = document.createElement("img");
+        img.className = "service-icon-img";
+        img.src = `img/${film.service_code}.png`;
+        img.alt = film.service_name || film.service_code;
+
+        // if the image fails to load, fall back to letter
+        img.onerror = () => {
+          img.remove();
+          const label =
+            (film.service_name || film.service_code || "?").charAt(0).toUpperCase();
+          svcSpan.textContent = label;
+          if (!film.service_name) {
+            svcSpan.classList.add("service-unknown");
+          }
+        };
+
+        svcSpan.appendChild(img);
+      } else if (film.service_name) {
+        // no code / image – just use initial
         svcSpan.textContent = film.service_name.charAt(0).toUpperCase();
       } else {
+        // totally unknown
         svcSpan.textContent = "?";
         svcSpan.classList.add("service-unknown");
       }
+
       meta.appendChild(svcSpan);
 
       row.appendChild(main);
@@ -412,7 +435,7 @@ function renderCurrentFilm() {
       detailService.textContent = ""; // or 'Service: (not set)'
     }
   }
-  
+
   if (detailNotes) detailNotes.textContent = currentFilm.notes || "No notes yet.";
   updateDetailWatchedUI();
 }
