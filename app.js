@@ -27,6 +27,17 @@ const detailWatched = document.getElementById("detailWatched");
 const detailNotes = document.getElementById("detailNotes");
 const detailMarkWatched = document.getElementById("detailMarkWatched");
 
+// Edit form controls
+const detailEditButton = document.getElementById("detailEditButton");
+const detailEditForm = document.getElementById("detailEditForm");
+const editTitleInput = document.getElementById("editTitle");
+const editYearInput = document.getElementById("editYear");
+const editWatchedInput = document.getElementById("editWatchedAt");
+const editClearWatchedButton = document.getElementById("editClearWatched");
+const editNotesInput = document.getElementById("editNotes");
+const editCancelButton = document.getElementById("editCancel");
+const editSaveButton = document.getElementById("editSave");
+
 // ===== GLOBAL STATE =====
 const basePath = window.location.pathname.replace(/index\.html$/, "");
 
@@ -56,35 +67,39 @@ async function fetchJson(url, options) {
 
 function setView(name) {
   Object.entries(views).forEach(([key, el]) => {
-    el.hidden = key !== name;
+    if (el) el.hidden = key !== name;
   });
   currentView = name;
   updateBackButton();
 }
 
 function updateBackButton() {
-  const atRoot = currentView === "lists" && !new URLSearchParams(window.location.search).get("l") && !new URLSearchParams(window.location.search).get("f");
+  if (!backButton) return;
+  const params = new URLSearchParams(window.location.search);
+  const atRoot = currentView === "lists" && !params.get("l") && !params.get("f");
   backButton.disabled = atRoot;
   backButton.classList.toggle("back-disabled", atRoot);
 }
 
 // ===== BACK BUTTON =====
-backButton.addEventListener("click", () => {
-  history.back();
-});
+if (backButton) {
+  backButton.addEventListener("click", () => {
+    history.back();
+  });
+}
 
 // ===== LISTS =====
 async function loadLists() {
-  listsStatus.textContent = "Loading lists...";
-  listsContainer.innerHTML = "";
-  listsSummary.textContent = "";
+  if (listsStatus) listsStatus.textContent = "Loading lists...";
+  if (listsContainer) listsContainer.innerHTML = "";
+  if (listsSummary) listsSummary.textContent = "";
 
   try {
     const lists = await fetchJson("api/lists.php");
     currentLists = lists;
 
     if (!lists.length) {
-      listsStatus.textContent = "No lists found.";
+      if (listsStatus) listsStatus.textContent = "No lists found.";
       return;
     }
 
@@ -121,76 +136,79 @@ async function loadLists() {
       row.appendChild(main);
       row.appendChild(meta);
 
-      // ---- progress bar ----
+      // progress bar
       const progressOuter = document.createElement("div");
       progressOuter.className = "list-progress-outer";
 
       const progressInner = document.createElement("div");
       progressInner.className = "list-progress-inner";
-
       const pct = total > 0 ? (watched / total) * 100 : 0;
       progressInner.style.width = `${pct}%`;
 
       progressOuter.appendChild(progressInner);
       row.appendChild(progressOuter);
-      // -----------------------
 
       row.addEventListener("click", () => openList(list));
 
-      listsContainer.appendChild(row);
+      if (listsContainer) listsContainer.appendChild(row);
     });
 
-    listsSummary.textContent = `${totalWatched}/${totalFilms} watched overall`;
-    listsStatus.textContent = "";
+    if (listsSummary)
+      listsSummary.textContent = `${totalWatched}/${totalFilms} watched overall`;
+    if (listsStatus) listsStatus.textContent = "";
   } catch (err) {
     console.error(err);
-    listsStatus.textContent = "Error loading lists.";
+    if (listsStatus) listsStatus.textContent = "Error loading lists.";
   }
 }
 
-addListButton.addEventListener("click", async () => {
-  const name = prompt("List name:");
-  if (!name || !name.trim()) return;
+if (addListButton) {
+  addListButton.addEventListener("click", async () => {
+    const name = prompt("List name:");
+    if (!name || !name.trim()) return;
 
-  const description = prompt("Description (optional):") || "";
+    const description = prompt("Description (optional):") || "";
 
-  addListButton.disabled = true;
-  const originalText = addListButton.textContent;
-  addListButton.textContent = "Adding...";
+    addListButton.disabled = true;
+    const originalText = addListButton.textContent;
+    addListButton.textContent = "Adding...";
 
-  try {
-    await fetchJson("api/lists_add.php", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: name.trim(),
-        description: description.trim(),
-      }),
-    });
+    try {
+      await fetchJson("api/lists_add.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          description: description.trim(),
+        }),
+      });
 
-    await loadLists();
-  } catch (err) {
-    console.error(err);
-    alert("Error adding list.");
-  } finally {
-    addListButton.disabled = false;
-    addListButton.textContent = originalText;
-  }
-});
+      await loadLists();
+    } catch (err) {
+      console.error(err);
+      alert("Error adding list.");
+    } finally {
+      addListButton.disabled = false;
+      addListButton.textContent = originalText;
+    }
+  });
+}
 
 // ===== FILMS (LIST VIEW) =====
 async function loadFilmsForList(list) {
-  filmsStatus.textContent = "Loading films...";
-  filmsContainer.innerHTML = "";
-  filmsListName.textContent = list.name;
-  filmsListStats.textContent = "";
+  if (filmsStatus) filmsStatus.textContent = "Loading films...";
+  if (filmsContainer) filmsContainer.innerHTML = "";
+  if (filmsListName) filmsListName.textContent = list.name;
+  if (filmsListStats) filmsListStats.textContent = "";
 
   try {
-    const films = await fetchJson(`api/films.php?list_id=${encodeURIComponent(list.id)}`);
+    const films = await fetchJson(
+      `api/films.php?list_id=${encodeURIComponent(list.id)}`
+    );
     currentFilms = films;
 
     if (!films.length) {
-      filmsStatus.textContent = "No films on this list yet.";
+      if (filmsStatus) filmsStatus.textContent = "No films on this list yet.";
       return;
     }
 
@@ -236,14 +254,15 @@ async function loadFilmsForList(list) {
 
       row.addEventListener("click", () => openFilmDetail(film));
 
-      filmsContainer.appendChild(row);
+      if (filmsContainer) filmsContainer.appendChild(row);
     });
 
-    filmsListStats.textContent = `${watched}/${films.length} watched`;
-    filmsStatus.textContent = "";
+    if (filmsListStats)
+      filmsListStats.textContent = `${watched}/${films.length} watched`;
+    if (filmsStatus) filmsStatus.textContent = "";
   } catch (err) {
     console.error(err);
-    filmsStatus.textContent = "Error loading films.";
+    if (filmsStatus) filmsStatus.textContent = "Error loading films.";
   }
 }
 
@@ -254,100 +273,215 @@ function openList(list, options = {}) {
     history.pushState(null, "", `${basePath}?l=${encodeURIComponent(list.id)}`);
   }
 
+  exitEditMode();
   setView("films");
   loadFilmsForList(list);
 }
 
-// Add film
-addFilmButton.addEventListener("click", async () => {
-  if (!currentList) {
-    alert("No list selected.");
-    return;
-  }
-
-  const title = prompt("Film title:");
-  if (!title || !title.trim()) return;
-
-  const yearInput = prompt("Year (optional):") || "";
-  const notes = prompt("Notes (optional):") || "";
-
-  let year = null;
-  if (yearInput.trim() !== "") {
-    const y = parseInt(yearInput.trim(), 10);
-    if (!Number.isNaN(y) && y > 0) {
-      year = y;
+if (addFilmButton) {
+  addFilmButton.addEventListener("click", async () => {
+    if (!currentList) {
+      alert("No list selected.");
+      return;
     }
-  }
 
-  addFilmButton.disabled = true;
-  const originalText = addFilmButton.textContent;
-  addFilmButton.textContent = "Adding...";
+    const title = prompt("Film title:");
+    if (!title || !title.trim()) return;
 
-  try {
-    await fetchJson("api/films_add.php", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        list_id: currentList.id,
-        title: title.trim(),
-        year,
-        notes: notes.trim(),
-      }),
-    });
+    const yearInput = prompt("Year (optional):") || "";
+    const notes = prompt("Notes (optional):") || "";
 
-    await loadFilmsForList(currentList);
-    await loadLists();
-  } catch (err) {
-    console.error(err);
-    alert("Error adding film.");
-  } finally {
-    addFilmButton.disabled = false;
-    addFilmButton.textContent = originalText;
-  }
-});
+    let year = null;
+    if (yearInput.trim() !== "") {
+      const y = parseInt(yearInput.trim(), 10);
+      if (!Number.isNaN(y) && y > 0) {
+        year = y;
+      }
+    }
 
-// ===== FILM DETAIL =====
+    addFilmButton.disabled = true;
+    const originalText = addFilmButton.textContent;
+    addFilmButton.textContent = "Adding...";
+
+    try {
+      await fetchJson("api/films_add.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          list_id: currentList.id,
+          title: title.trim(),
+          year,
+          notes: notes.trim(),
+        }),
+      });
+
+      await loadFilmsForList(currentList);
+      await loadLists();
+    } catch (err) {
+      console.error(err);
+      alert("Error adding film.");
+    } finally {
+      addFilmButton.disabled = false;
+      addFilmButton.textContent = originalText;
+    }
+  });
+}
+
+// ===== FILM DETAIL + EDIT =====
 function updateDetailWatchedUI() {
   if (!currentFilm) return;
 
-  if (currentFilm.watched_at) {
-    detailWatched.textContent = `Watched on ${currentFilm.watched_at}`;
-    detailMarkWatched.textContent = "Watched";
-    detailMarkWatched.disabled = true;
-  } else {
-    detailWatched.textContent = "Not watched yet.";
-    detailMarkWatched.textContent = "Mark watched today";
-    detailMarkWatched.disabled = false;
+  if (detailWatched) {
+    if (currentFilm.watched_at) {
+      detailWatched.textContent = `Watched on ${currentFilm.watched_at}`;
+    } else {
+      detailWatched.textContent = "Not watched yet.";
+    }
   }
+
+  if (detailMarkWatched) {
+    if (currentFilm.watched_at) {
+      detailMarkWatched.textContent = "Watched";
+      detailMarkWatched.disabled = true;
+    } else {
+      detailMarkWatched.textContent = "Mark watched today";
+      detailMarkWatched.disabled = false;
+    }
+  }
+}
+
+function renderCurrentFilm() {
+  if (!currentFilm) return;
+
+  if (detailTitle) detailTitle.textContent = currentFilm.title;
+  if (detailYear) {
+    detailYear.textContent = currentFilm.year
+      ? `Year: ${currentFilm.year}`
+      : "";
+  }
+  if (detailNotes) detailNotes.textContent = currentFilm.notes || "No notes yet.";
+  updateDetailWatchedUI();
 }
 
 function openFilmDetail(film, options = {}) {
   currentFilm = film;
-
-  detailTitle.textContent = film.title;
-  detailYear.textContent = film.year ? `Year: ${film.year}` : "";
-  detailNotes.textContent = film.notes || "No notes yet.";
-
-  updateDetailWatchedUI();
+  renderCurrentFilm();
 
   if (options.updateUrl !== false) {
-    history.pushState(null, "", `${basePath}?f=${encodeURIComponent(film.id)}`);
+    history.pushState(
+      null,
+      "",
+      `${basePath}?f=${encodeURIComponent(film.id)}`
+    );
   }
 
+  exitEditMode();
   setView("filmDetail");
 }
 
-detailMarkWatched.addEventListener("click", async () => {
+if (detailMarkWatched) {
+  detailMarkWatched.addEventListener("click", async () => {
+    if (!currentFilm) return;
+
+    detailMarkWatched.disabled = true;
+    detailMarkWatched.textContent = "Saving...";
+
+    try {
+      const updated = await fetchJson("api/film_watch.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ film_id: currentFilm.id }),
+      });
+
+      currentFilm = { ...currentFilm, ...updated };
+
+      const idx = currentFilms.findIndex((f) => f.id === currentFilm.id);
+      if (idx !== -1) {
+        currentFilms[idx] = { ...currentFilms[idx], ...updated };
+      }
+
+      renderCurrentFilm();
+      if (currentList) {
+        await loadFilmsForList(currentList);
+      }
+      await loadLists();
+    } catch (err) {
+      console.error(err);
+      alert("Error marking as watched.");
+      detailMarkWatched.disabled = false;
+      detailMarkWatched.textContent = "Mark watched today";
+    }
+  });
+}
+
+// --- edit mode helpers ---
+function enterEditMode() {
+  if (!currentFilm || !detailEditForm) return;
+
+  if (editTitleInput) editTitleInput.value = currentFilm.title || "";
+  if (editYearInput) {
+    editYearInput.value =
+      currentFilm.year !== null && currentFilm.year !== undefined
+        ? String(currentFilm.year)
+        : "";
+  }
+  if (editNotesInput) editNotesInput.value = currentFilm.notes || "";
+  if (editWatchedInput)
+    editWatchedInput.value = currentFilm.watched_at || "";
+
+  detailEditForm.hidden = false;
+  if (detailEditButton) detailEditButton.disabled = true;
+}
+
+function exitEditMode() {
+  if (detailEditForm) detailEditForm.hidden = true;
+  if (detailEditButton) detailEditButton.disabled = false;
+}
+
+async function handleEditSubmit(event) {
+  event.preventDefault();
   if (!currentFilm) return;
 
-  detailMarkWatched.disabled = true;
-  detailMarkWatched.textContent = "Saving...";
+  const title = editTitleInput ? editTitleInput.value.trim() : "";
+  if (!title) {
+    alert("Title is required.");
+    return;
+  }
+
+  const yearStr = editYearInput ? editYearInput.value.trim() : "";
+  let year = null;
+  if (yearStr !== "") {
+    const y = parseInt(yearStr, 10);
+    if (Number.isNaN(y) || y <= 0 || y > 9999) {
+      alert("Please enter a valid year (1–9999) or leave blank.");
+      return;
+    }
+    year = y;
+  }
+
+  const notes = editNotesInput ? editNotesInput.value.trim() : "";
+  const watchedAt =
+    editWatchedInput && editWatchedInput.value
+      ? editWatchedInput.value
+      : null;
+
+  if (editSaveButton) {
+    editSaveButton.disabled = true;
+    var originalText = editSaveButton.textContent;
+    editSaveButton.textContent = "Saving...";
+  }
 
   try {
-    const updated = await fetchJson("api/film_watch.php", {
+    const updated = await fetchJson("api/film_update.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ film_id: currentFilm.id }),
+      body: JSON.stringify({
+        film_id: currentFilm.id,
+        title,
+        year,
+        notes,
+        watched_at: watchedAt,
+      }),
     });
 
     currentFilm = { ...currentFilm, ...updated };
@@ -357,19 +491,48 @@ detailMarkWatched.addEventListener("click", async () => {
       currentFilms[idx] = { ...currentFilms[idx], ...updated };
     }
 
-    updateDetailWatchedUI();
-
+    renderCurrentFilm();
     if (currentList) {
       await loadFilmsForList(currentList);
     }
     await loadLists();
+
+    exitEditMode();
   } catch (err) {
     console.error(err);
-    alert("Error marking as watched.");
-    detailMarkWatched.disabled = false;
-    detailMarkWatched.textContent = "Mark watched today";
+    alert("Error saving changes.");
+  } finally {
+    if (editSaveButton) {
+      editSaveButton.disabled = false;
+      editSaveButton.textContent = originalText;
+    }
   }
-});
+}
+
+// Hook up edit form events (all guarded)
+if (detailEditButton) {
+  detailEditButton.addEventListener("click", () => {
+    enterEditMode();
+  });
+}
+
+if (editCancelButton) {
+  editCancelButton.addEventListener("click", (e) => {
+    e.preventDefault();
+    exitEditMode();
+  });
+}
+
+if (editClearWatchedButton) {
+  editClearWatchedButton.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (editWatchedInput) editWatchedInput.value = "";
+  });
+}
+
+if (detailEditForm) {
+  detailEditForm.addEventListener("submit", handleEditSubmit);
+}
 
 // ===== ROUTING =====
 async function initFromUrl() {
@@ -378,9 +541,10 @@ async function initFromUrl() {
   const listId = params.get("l");
 
   if (filmId) {
-    // Start from a film: load its data and parent list
     try {
-      const film = await fetchJson(`api/film.php?film_id=${encodeURIComponent(filmId)}`);
+      const film = await fetchJson(
+        `api/film.php?film_id=${encodeURIComponent(filmId)}`
+      );
 
       await loadLists();
 
@@ -399,7 +563,6 @@ async function initFromUrl() {
       await loadLists();
     }
   } else if (listId) {
-    // Start from a list
     setView("films");
     await loadLists();
     const list = currentLists.find((l) => String(l.id) === String(listId));
@@ -409,7 +572,6 @@ async function initFromUrl() {
       setView("lists");
     }
   } else {
-    // Root lists view
     setView("lists");
     await loadLists();
   }

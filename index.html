@@ -1,53 +1,109 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>Films to Watch</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <header>
-    <button id="backButton" type="button" disabled>← Back</button>
-    <h1>Films to Watch</h1>
-  </header>
+  <head>
+    <meta charset="utf-8" />
+    <title>Films to Watch</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="apple-touch-icon" sizes="180x180" href="img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="img/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+  </head>
+  <body>
+    <header class="app-header">
+      <button id="backButton" type="button" disabled>← Back</button>
+      <h1>Films to Watch</h1>
+    </header>
 
-  <main>
-    <!-- View 1: Lists -->
-    <section id="view-lists">
-      <div class="section-header">
-        <h2>Lists</h2>
-        <div id="listsSummary" class="summary-text"></div>
-      </div>
-      <div id="listsContainer" class="card-list"></div>
-      <button id="addListButton" type="button">Add list</button>
-      <p id="listsStatus" class="status"></p>
-    </section>
+    <main class="app-main">
+      <!-- ===== LISTS VIEW ===== -->
+      <section id="view-lists">
+        <div class="section-header">
+          <h2>Lists</h2>
+          <div class="section-header-meta">
+            <span id="listsSummary"></span>
+          </div>
+        </div>
 
-    <!-- View 2: Films in a list -->
-    <section id="view-films" hidden>
-      <div class="section-header">
-        <h2 id="filmsListName">List</h2>
-        <div id="filmsListStats" class="summary-text"></div>
-      </div>
-      <div id="filmsContainer" class="card-list"></div>
-      <button id="addFilmButton" type="button">Add film</button>
-      <p id="filmsStatus" class="status"></p>
-    </section>
+        <div id="listsContainer"></div>
+        <button id="addListButton">Add list</button>
+        <p id="listsStatus" class="status-text"></p>
+      </section>
 
-    <!-- View 3: Film detail -->
-    <section id="view-film-detail" hidden>
-    <article id="filmDetail">
+      <!-- ===== FILMS-IN-LIST VIEW ===== -->
+      <section id="view-films" hidden>
+        <div class="section-header">
+          <h2 id="filmsListName"></h2>
+          <div class="section-header-meta">
+            <span id="filmsListStats"></span>
+          </div>
+        </div>
+
+        <div id="filmsContainer"></div>
+        <button id="addFilmButton">Add film</button>
+        <p id="filmsStatus" class="status-text"></p>
+      </section>
+
+      <!-- ===== FILM DETAIL VIEW ===== -->
+      <section id="view-film-detail" hidden>
         <h2 id="detailTitle"></h2>
-        <p id="detailYear" class="detail-meta"></p>
-        <p id="detailWatched" class="detail-meta"></p>
+
+        <p id="detailYear"></p>
+        <p id="detailWatched"></p>
         <p id="detailNotes"></p>
-        <button id="detailMarkWatched" type="button">Mark watched today</button>
-    </article>
-    </section>
 
-  </main>
+        <div class="detail-buttons">
+          <button id="detailEditButton">Edit</button>
+          <button id="detailMarkWatched">Mark watched today</button>
+        </div>
 
-  <script src="app.js"></script>
-</body>
+        <!-- Edit form (hidden until "Edit" pressed) -->
+        <form id="detailEditForm" class="detail-edit card" hidden>
+          <label>
+            Title
+            <input type="text" id="editTitle" required />
+          </label>
+
+          <label>
+            Year
+            <input
+              type="number"
+              id="editYear"
+              min="0"
+              max="9999"
+              inputmode="numeric"
+              placeholder="Leave blank if unknown"
+            />
+          </label>
+
+          <label class="detail-edit-date-row">
+            Watched on
+            <div class="detail-edit-date-inputs">
+              <input type="date" id="editWatchedAt" />
+              <button
+                type="button"
+                id="editClearWatched"
+                class="text-button"
+              >
+                Clear
+              </button>
+            </div>
+          </label>
+
+          <label>
+            Notes
+            <textarea id="editNotes" rows="4"></textarea>
+          </label>
+
+          <div class="detail-edit-actions">
+            <button type="button" id="editCancel">Cancel</button>
+            <button type="submit" id="editSave">Save</button>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
 </html>
