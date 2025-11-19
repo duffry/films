@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Films to Watch – Stats</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* A few tweaks specific to the stats page */
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 3rem;
+    }
+
+    .stats-header {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stats-header h1 {
+      font-size: 1.8rem;
+      margin: 0;
+    }
+
+    .stats-summary {
+      font-size: 0.95rem;
+      opacity: 0.8;
+    }
+
+    table.stats-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    table.stats-table thead {
+      background: #181818;
+    }
+
+    table.stats-table th,
+    table.stats-table td {
+      padding: 0.5rem 0.6rem;
+      text-align: right;
+      border-bottom: 1px solid #333;
+      white-space: nowrap;
+    }
+
+    table.stats-table th:first-child,
+    table.stats-table td:first-child {
+      text-align: left;
+      white-space: normal;
+    }
+
+    table.stats-table tbody tr:nth-child(odd) {
+      background: #111;
+    }
+
+    table.stats-table tbody tr:nth-child(even) {
+      background: #151515;
+    }
+
+    .stats-note {
+      margin-top: 0.75rem;
+      font-size: 0.8rem;
+      opacity: 0.7;
+    }
+
+    .badge-unknown {
+      opacity: 0.8;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <button type="button" class="back-button" onclick="history.back()">← Back</button>
+    <h1>Films to Watch – Stats</h1>
+  </header>
+
+  <main>
+    <section class="stats-header">
+      <h1>Items by service</h1>
+      <p class="stats-summary" id="statsSummary">Loading…</p>
+    </section>
+
+    <section>
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th>Service</th>
+            <th>Watched</th>
+            <th>% of watched</th>
+            <th>Unwatched</th>
+            <th>% of unwatched</th>
+            <th>Total</th>
+            <th>% of all items</th>
+          </tr>
+        </thead>
+        <tbody id="serviceStatsBody">
+          <!-- filled by stats.js -->
+        </tbody>
+      </table>
+      <p class="stats-note">
+        Percentages are relative to the column totals (e.g. “% of watched” sums to 100% across all services).
+      </p>
+    </section>
+
+    <p id="statsStatus" class="stats-note"></p>
+  </main>
+
+  <script src="stats.js"></script>
+</body>
+</html>
