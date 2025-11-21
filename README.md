@@ -1,247 +1,210 @@
 # Films to Watch
 
-A small web app for tracking film/TV watch lists.
+A small personal web app for managing film/TV/radio watch lists and tracking what has been watched, where it is available, and high-level stats by service.
 
-The app is deliberately lightweight:
-
-- Static front-end (`index.html`, `styles.css`, `app.js`)
-- Thin PHP API layer (`/api/*.php`)
-- MariaDB / MySQL database
-
-Everything is designed to be understandable and tweakable without a big framework.
+- Browse themed lists (Alien, Star Wars, MCU, etc.).
+- View ordered items in each list with notes and streaming service.
+- Mark items as watched and see history.
+- View statistics by service (how much is on Disney+, Netflix, Prime, etc.).
+- See recent GitHub changes to the project.
 
 ---
 
-## Features
+## 1. Tech stack
 
-- **Lists of films/series**
-  - Create named lists (e.g. *Kevin Smith*, *Lord of the Rings*, *Fallout*).
-  - See overall progress per list (watched / total) with a subtle progress bar.
-  - Global progress summary across all lists.
+- **Frontend:** Static HTML (`index.html`, `stats.html`, `changes.html`), vanilla JS (`app.js`, `stats.js`, `changes.js`), single shared CSS file (`styles.css`).
+- **Backend:** PHP-based JSON endpoints in `api/` using PDO.
+- **Database:** MariaDB/MySQL with three core tables: `films`, `lists`, `services`. fileciteturn0file0
+- **Hosting:** Standard LAMP-style shared hosting.
 
-- **Films within a list**
-  - Add films or episodes with title, year and notes.
-  - Visual progress bar for each film (unwatched vs watched).
-  - Optional *service* badge on the right (e.g. Disney+, DVD, YouTube).
-
-- **Film detail page**
-  - Shows title, year, service, watched date and notes.
-  - “Mark watched today” button to quickly set the watched date.
-  - Edit form to update title, year, notes, watched date and service.
-
-- **Data-driven services**
-  - Separate `services` table (Netflix, Disney+, Cinema, DVD, YouTube, etc.).
-  - Service is stored by id in `films.service_id`.
-  - Front-end shows either a small icon from `/img/<code>.png` or falls back to an initial (“D”, “N”, “Y”, or `?`).
-
-- **URL routing**
-  - `?l=<list_id>` opens a specific list.
-  - `?f=<film_id>` opens a specific film detail.
-  - Uses `history.pushState` + `popstate` for SPA-style navigation (back button works as expected).
+For more structural detail, see `ARCHITECTURE.md`.  
+For setup and workflow, see `DEVELOPMENT_GUIDE.md`.
 
 ---
 
-## Tech stack
+## 2. Features
 
-- **Front-end:** HTML, CSS, vanilla JavaScript  
-- **Back-end:** PHP 8.x, PDO  
-- **Database:** MariaDB / MySQL  
-- **Hosting:** any basic LAMP-style shared hosting (tested on IONOS)
+- **Lists view (main app):**
+  - Shows all lists with description and summary counts (total, watched, last watched).
+  - Click a list to see its items.
 
-No frameworks, build steps or package managers are required.
+- **Films view:**
+  - Shows items in a list in a specified display order.
+  - Shows title, year, notes snippet, and service pill.
+  - Click an item to open the detail view.
 
----
+- **Film detail view:**
+  - Full notes, year, service, and watched status.
+  - Mark item as watched (sets `watched_at`).
+  - Edit title/year/notes/watched.
 
-## Database schema
+- **Stats view (`stats.html`):**
+  - Aggregated counts by service (watched/unwatched, totals, percentages).
+  - Drill into all items on a particular service.
 
-Minimal overview (column types can be adjusted to your taste).
-
-```sql
--- Lists of films/series
-CREATE TABLE lists (
-  id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  name        VARCHAR(255) NOT NULL,
-  description TEXT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Streaming / viewing services
-CREATE TABLE services (
-  id   INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  code VARCHAR(20)  NOT NULL UNIQUE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Films / episodes
-CREATE TABLE films (
-  id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  list_id       INT UNSIGNED NOT NULL,
-  display_order INT NOT NULL,
-  title         VARCHAR(255) NOT NULL,
-  year          INT NULL,
-  notes         TEXT NULL,
-  watched_at    DATE NULL,
-  service_id    INT UNSIGNED NULL,
-  CONSTRAINT fk_films_list
-    FOREIGN KEY (list_id) REFERENCES lists(id),
-  CONSTRAINT fk_films_service
-    FOREIGN KEY (service_id) REFERENCES services(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-```
-
-You can seed `services` with whatever you use most, for example:
-
-```sql
-INSERT INTO services (name, code) VALUES
-('Disney+',            'disney'),
-('Netflix',            'netflix'),
-('Amazon Prime Video', 'prime'),
-('Apple TV+',          'appletv'),
-('BBC iPlayer',        'iplayer'),
-('NOW',                'now'),
-('Cinema',             'cinema'),
-('DVD / Blu-ray',      'disc'),
-('YouTube',            'youtube'),
-('Radio / Audio',      'audio'),
-('Other / Unknown',    'other');
-```
+- **Changes view (`changes.html`):**
+  - Displays recent GitHub commits for this repo via the GitHub API.
 
 ---
 
-## API endpoints
+## 3. Database schema (summary)
 
-All responses are JSON. Errors return a JSON `{ "error": "...", ... }` with an appropriate HTTP status.
+**lists**
+
+| Column      | Type        | Notes                        |
+|------------|-------------|------------------------------|
+| `id`       | int, PK     | Auto-increment               |
+| `name`     | varchar     | List name                    |
+| `description` | text     | Optional description         |
+
+**services**
+
+| Column | Type                 | Notes                         |
+|--------|----------------------|-------------------------------|
+| `id`   | unsigned int, PK     | Auto-increment                |
+| `name` | varchar              | Human-readable name           |
+| `code` | varchar, unique      | Short code used in the UI     |
+
+**films**
+
+| Column         | Type        | Notes                                       |
+|----------------|-------------|---------------------------------------------|
+| `id`           | int, PK     | Auto-increment                              |
+| `list_id`      | int, FK     | References `lists.id`                       |
+| `display_order`| int         | Controls ordering within a list             |
+| `title`        | varchar     | Title of film/episode/etc.                  |
+| `year`         | int         | Release year (optional)                     |
+| `notes`        | text        | Free-text notes (optional)                  |
+| `watched_at`   | date        | Date watched (optional)                     |
+| `service_id`   | int, FK     | References `services.id` (optional)        |
+
+Foreign key constraints:
+
+- `films.list_id` → `lists.id`
+- `films.service_id` → `services.id`
+
+See the SQL dump in `helpers/` (not committed) for full DDL and seed data.
+
+---
+
+## 4. API overview
+
+All endpoints live under `/api/` and return JSON.
+
+### Lists
 
 - `GET /api/lists.php`  
-  Returns all lists with aggregate stats:
-
-  ```json
-  [
-    {
-      "id": 1,
-      "name": "Kevin Smith",
-      "description": "All Kevin Smith films",
-      "total_films": 16,
-      "watched_films": 2,
-      "last_watched_at": "2025-10-24"
-    }
-  ]
-  ```
+  Returns all lists with basic aggregate stats per list (film counts, watched counts, last watched date).
 
 - `POST /api/lists_add.php`  
-  Body: `{ "name": "...", "description": "..." }`  
+  Body: `{"name": string, "description": string|null}`  
   Creates a new list.
 
-- `GET /api/films.php?list_id=1`  
-  Returns all films for a list, including service data.
+### Films
+
+- `GET /api/films.php?list_id={id}`  
+  Returns all films for a given list, including service information.
+
+- `GET /api/film.php?id={id}`  
+  Returns a single film’s details.
 
 - `POST /api/films_add.php`  
-  Body: `{ "list_id": 1, "title": "...", "year": 2024, "notes": "...", "service_id": 3 }`  
-  Adds a film/episode to a list (service_id optional).
-
-- `POST /api/film_watch.php`  
-  Body: `{ "film_id": 42 }`  
-  Sets `watched_at` to *today* for the given film.
-
-- `GET /api/film.php?film_id=42`  
-  Returns a single film plus its parent list info.
+  Body typically includes `list_id`, `title`, `year?`, `notes?`, `service_id?`.
 
 - `POST /api/film_update.php`  
-  Body:
+  Updates fields such as `title`, `year`, `notes`, `watched_at`, `service_id` for a film.
 
-  ```json
-  {
-    "film_id": 42,
-    "title": "New title",
-    "year": 2024,
-    "notes": "Updated notes",
-    "watched_at": "2025-01-01",
-    "service_id": 3
-  }
-  ```
+- `POST /api/film_watch.php`  
+  Marks a film as watched (or clears watched status).
 
-  Updates core film fields and returns the updated record.
+### Services
 
 - `GET /api/services.php`  
-  Returns all services for populating the edit dropdown.
+  Returns all services (id, name, code).
+
+### Stats
+
+- `GET /api/stats_services.php`  
+  Returns per-service aggregates (totals, watched/unwatched, percentages).
+
+- `GET /api/stats_service_items.php?service_id={id}`  
+  Returns items attached to a given service.
+
+> **Note:** This is a descriptive summary. For the exact request/response shapes, refer to the implementations in `api/` and the calling code in `app.js`/`stats.js`.
 
 ---
 
-## Configuration
+## 5. Local development (quick start)
 
-Edit `api/db.php` with your own database credentials:
+1. **Clone the repo:**
 
-```php
-<?php
-$dsn  = 'mysql:host=YOUR_HOST;dbname=YOUR_DB_NAME;charset=utf8mb4';
-$user = 'YOUR_DB_USER';
-$pass = 'YOUR_DB_PASSWORD';
-
-$options = [
-    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-];
-
-$pdo = new PDO($dsn, $user, $pass, $options);
-
-function json_response($data, int $status = 200): void {
-    http_response_code($status);
-    header('Content-Type: application/json');
-    echo json_encode($data);
-    exit;
-}
-```
-
----
-
-## Running locally
-
-1. Create the database and run the schema SQL.
-2. Configure `api/db.php`.
-3. Place the repo in your PHP web root, e.g.:
-
-   ```text
-   /var/www/html/films/...
+   ```bash
+   git clone <YOUR_REPO_URL> films
+   cd films
    ```
 
-4. Access `http://localhost/films/` in your browser.
+2. **Set up the database:**
+   - Create a database locally (e.g. `films_to_watch`).
+   - Import the SQL dump from `helpers/`:
 
-On shared hosting, just upload the files to the desired directory and point the domain/subdomain at it.
+     ```bash
+     mysql -u <user> -p films_to_watch < helpers/db5019017679_hosting-data_io.sql
+     ```
+
+3. **Configure DB connection:**  
+   Edit `api/db.php` and point it at your local database with username/password.
+
+4. **Run a PHP dev server:**
+
+   ```bash
+   php -S localhost:8000
+   ```
+
+5. **Open in a browser:**
+
+   - Main app: `http://localhost:8000/index.html`
+   - Stats: `http://localhost:8000/stats.html`
+   - Changes: `http://localhost:8000/changes.html`
+
+See `DEVELOPMENT_GUIDE.md` for more detailed instructions and workflow.
 
 ---
 
-## Future ideas
+## 6. Project structure
 
-- Drag-and-drop reordering of films within a list.
-- Filters (e.g. show only unwatched items, or only items on a specific service).
-- Per-user authentication and personalised lists.
-- Export/import lists as JSON or CSV.
-
----
-
-## Licence
-
-This project is licensed under the MIT License.
+See `ARCHITECTURE.md` for a more detailed map. In short:
 
 ```text
-MIT License
-
-Copyright (c) 2025 Dom Hobbs
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+/
+├── index.html          # Main app (lists + films)
+├── stats.html          # Service statistics
+├── changes.html        # Recent GitHub commits
+├── app.js              # Main SPA logic
+├── stats.js            # Stats page logic
+├── changes.js          # Changes page logic
+├── styles.css          # Shared styles
+├── api/                # PHP JSON endpoints
+├── ARCHITECTURE.md     # Structural overview
+├── DEVELOPMENT_GUIDE.md# This file: development workflow and setup
+├── README.md           # You are here
+├── .gitignore          # Git ignore rules
+└── helpers/            # Local-only helpers (dumps, zips, notes; ignored by git)
 ```
+
+---
+
+## 7. Contributing / future you
+
+This is primarily a personal project, but if you (or someone else) contribute in future:
+
+- Keep commits focused and descriptive.
+- Update both:
+  - `ARCHITECTURE.md` when structure/responsibilities change.
+  - `DEVELOPMENT_GUIDE.md` if setup or workflow changes.
+- If adding non-trivial features or changing API shapes, document them in this `README`.
+
+You can add a dedicated `CONTRIBUTING.md` later if the project becomes multi-contributor.
+
+---
+
+*Last updated: 2025-11-21*
