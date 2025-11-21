@@ -19,6 +19,7 @@ const filmsListName = document.getElementById("filmsListName");
 const filmsListStats = document.getElementById("filmsListStats");
 const filmsStatus = document.getElementById("filmsStatus");
 const addFilmButton = document.getElementById("addFilmButton");
+const addFromImdbButton = document.getElementById("addFromImdbButton");
 
 // Film detail view
 const detailTitle = document.getElementById("detailTitle");
@@ -41,6 +42,15 @@ const editSaveButton = document.getElementById("editSave");
 const editServiceSelect = document.getElementById("editService");
 const editListSelect = document.getElementById("editList");
 
+// IMDb overlay controls
+const imdbOverlay = document.getElementById("imdbOverlay");
+const imdbUrlInput = document.getElementById("imdbUrlInput");
+const imdbLookupStatus = document.getElementById("imdbLookupStatus");
+const imdbPreview = document.getElementById("imdbPreview");
+const imdbCancelButton = document.getElementById("imdbCancelButton");
+const imdbFetchButton = document.getElementById("imdbFetchButton");
+const imdbCreateButton = document.getElementById("imdbCreateButton");
+
 // ===== GLOBAL STATE =====
 const basePath = window.location.pathname.replace(/index\.html$/, "");
 
@@ -50,6 +60,7 @@ let currentList = null;
 let currentFilms = [];
 let currentFilm = null;
 let availableServices = [];
+let imdbLookupResult = null;
 
 // ===== HELPER FUNCTIONS =====
 async function fetchJson(url, options) {
@@ -407,6 +418,135 @@ if (addFilmButton) {
     } finally {
       addFilmButton.disabled = false;
       addFilmButton.textContent = originalText;
+    }
+  });
+}
+
+
+// ===== ADD FROM IMDb =====
+function openImdbOverlay() {
+  if (!imdbOverlay) return;
+  imdbOverlay.hidden = false;
+  if (imdbPreview) imdbPreview.hidden = true;
+  if (imdbCreateButton) imdbCreateButton.hidden = true;
+  if (imdbLookupStatus) imdbLookupStatus.textContent = "";
+  if (imdbUrlInput) {
+    imdbUrlInput.value = "";
+    imdbUrlInput.focus();
+  }
+  imdbLookupResult = null;
+}
+
+function closeImdbOverlay() {
+  if (!imdbOverlay) return;
+  imdbOverlay.hidden = true;
+  if (imdbLookupStatus) imdbLookupStatus.textContent = "";
+  if (imdbPreview) imdbPreview.hidden = true;
+  if (imdbCreateButton) imdbCreateButton.hidden = true;
+  imdbLookupResult = null;
+}
+
+if (addFromImdbButton) {
+  addFromImdbButton.addEventListener("click", () => {
+    if (!currentList) {
+      alert("Open a list before adding from IMDb.");
+      return;
+    }
+    openImdbOverlay();
+  });
+}
+
+if (imdbCancelButton) {
+  imdbCancelButton.addEventListener("click", () => {
+    closeImdbOverlay();
+  });
+}
+
+if (imdbFetchButton) {
+  imdbFetchButton.addEventListener("click", async () => {
+    if (!imdbUrlInput || !imdbLookupStatus) return;
+    const url = imdbUrlInput.value.trim();
+    if (!url) {
+      imdbLookupStatus.textContent = "Please paste an IMDb URL.";
+      return;
+    }
+
+    imdbLookupStatus.textContent = "Looking up film…";
+    if (imdbPreview) imdbPreview.hidden = true;
+    if (imdbCreateButton) imdbCreateButton.hidden = true;
+    imdbLookupResult = null;
+
+    try {
+      const data = await fetchJson(
+        `api/imdb_lookup.php?url=${encodeURIComponent(url)}`
+      );
+
+      imdbLookupResult = data;
+
+      const yearText =
+        data.year !== null && data.year !== undefined ? ` (${data.year})` : "";
+
+      if (imdbPreview) {
+        imdbPreview.innerHTML = `
+          <h3>${data.title || "Untitled"}${yearText}</h3>
+          ${
+            data.runtime_minutes
+              ? `<p><strong>Runtime:</strong> ${data.runtime_minutes} min</p>`
+              : ""
+          }
+          ${
+            data.plot
+              ? `<p class="small"><strong>Plot (from IMDb):</strong> ${data.plot}</p>`
+              : ""
+          }
+        `;
+        imdbPreview.hidden = false;
+      }
+
+      if (imdbCreateButton) imdbCreateButton.hidden = false;
+      imdbLookupStatus.textContent = "";
+    } catch (err) {
+      console.error(err);
+      imdbLookupStatus.textContent =
+        "Could not fetch details from IMDb. Please check the URL.";
+    }
+  });
+}
+
+if (imdbCreateButton) {
+  imdbCreateButton.addEventListener("click", async () => {
+    if (!imdbLookupResult || !currentList || !imdbLookupStatus) return;
+
+    imdbCreateButton.disabled = true;
+    imdbLookupStatus.textContent = "Creating film…";
+
+    const payload = {
+      list_id: currentList.id,
+      title: imdbLookupResult.title || "Untitled",
+      year:
+        imdbLookupResult.year !== null &&
+        imdbLookupResult.year !== undefined
+          ? imdbLookupResult.year
+          : null,
+      notes: "",
+      service_id: null,
+    };
+
+    try {
+      await fetchJson("api/films_add.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      closeImdbOverlay();
+      await loadFilmsForList(currentList);
+      await loadLists();
+    } catch (err) {
+      console.error(err);
+      imdbLookupStatus.textContent = "Failed to create film.";
+    } finally {
+      imdbCreateButton.disabled = false;
     }
   });
 }

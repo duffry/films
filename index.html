@@ -51,7 +51,12 @@
         <div id="filmsContainer"></div>
 
         <div class="lists-actions">
-          <button id="addFilmButton">Add film</button>
+          <div class="lists-primary-actions">
+            <button id="addFilmButton">Add film</button>
+            <button id="addFromImdbButton" class="secondary-pill imdb-pill">
+              <img src="img/imdb.png" alt="IMDB" width="40" height="40">
+            </button>
+          </div>
 
           <div class="lists-secondary-actions">
             <a href="stats.html" class="secondary-pill">Statistics</a>
@@ -136,6 +141,38 @@
         </form>
       </section>
     </main>
+
+    <div id="imdbOverlay" class="overlay" hidden>
+      <div class="overlay-card">
+        <h2>Add film from IMDb</h2>
+
+        <label>
+          IMDb URL
+          <input
+            type="url"
+            id="imdbUrlInput"
+            placeholder="https://www.imdb.com/title/tt0146882"
+          />
+        </label>
+
+        <p id="imdbLookupStatus" class="status-text"></p>
+
+        <div id="imdbPreview" class="imdb-preview" hidden></div>
+
+        <div class="overlay-actions">
+          <button id="imdbCancelButton" class="secondary-button">
+            Cancel
+          </button>
+          <button id="imdbFetchButton" class="primary-button">
+            Fetch details
+          </button>
+          <button id="imdbCreateButton" class="primary-button" hidden>
+            Create film
+          </button>
+        </div>
+      </div>
+    </div>
+    
 
     <script src="app.js"></script>
   </body>
