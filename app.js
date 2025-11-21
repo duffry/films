@@ -39,6 +39,7 @@ const editNotesInput = document.getElementById("editNotes");
 const editCancelButton = document.getElementById("editCancel");
 const editSaveButton = document.getElementById("editSave");
 const editServiceSelect = document.getElementById("editService");
+const editListSelect = document.getElementById("editList");
 
 // ===== GLOBAL STATE =====
 const basePath = window.location.pathname.replace(/index\.html$/, "");
@@ -120,6 +121,18 @@ if (backButton) {
 }
 
 // ===== LISTS =====
+function populateListOptions() {
+  if (!editListSelect) return;
+  editListSelect.innerHTML = "";
+
+  currentLists.forEach((list) => {
+    const opt = document.createElement("option");
+    opt.value = String(list.id);
+    opt.textContent = list.name;
+    editListSelect.appendChild(opt);
+  });
+}
+
 async function loadLists() {
   if (listsStatus) listsStatus.textContent = "Loading lists...";
   if (listsContainer) listsContainer.innerHTML = "";
@@ -128,6 +141,9 @@ async function loadLists() {
   try {
     const lists = await fetchJson("api/lists.php");
     currentLists = lists;
+
+    // Keep the edit form list dropdown in sync with the lists
+    populateListOptions();
 
     if (!lists.length) {
       if (listsStatus) listsStatus.textContent = "No lists found.";
@@ -506,6 +522,18 @@ function enterEditMode() {
   if (editWatchedInput)
     editWatchedInput.value = currentFilm.watched_at || "";
 
+  // List select
+  if (editListSelect && currentLists.length) {
+    populateListOptions();
+    const listId =
+      currentFilm.list_id ??
+      (currentList ? currentList.id : null);
+    if (listId !== null && listId !== undefined) {
+      editListSelect.value = String(listId);
+    }
+  }
+
+  // Service select
   if (availableServices.length && editServiceSelect) {
     populateServiceOptions();
   }
@@ -519,6 +547,7 @@ function enterEditMode() {
   }
 
   detailEditForm.hidden = false;
+
   if (detailEditButton) detailEditButton.disabled = true;
 }
 
@@ -553,9 +582,21 @@ async function handleEditSubmit(event) {
     editWatchedInput && editWatchedInput.value
       ? editWatchedInput.value
       : null;
+
   const serviceIdStr = editServiceSelect ? editServiceSelect.value : "";
   const service_id =
     serviceIdStr && serviceIdStr !== "" ? parseInt(serviceIdStr, 10) : null;
+
+  const listIdStr = editListSelect ? editListSelect.value : "";
+  let list_id = null;
+  if (listIdStr && listIdStr !== "") {
+    list_id = parseInt(listIdStr, 10);
+  } else if (
+    currentFilm.list_id !== null &&
+    currentFilm.list_id !== undefined
+  ) {
+    list_id = currentFilm.list_id;
+  }
 
   if (editSaveButton) {
     editSaveButton.disabled = true;
@@ -574,6 +615,7 @@ async function handleEditSubmit(event) {
         notes,
         watched_at: watchedAt,
         service_id: service_id,
+        list_id: list_id,
       }),
     });
 
