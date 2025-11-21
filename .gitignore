@@ -1,0 +1,13 @@
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Local artefacts (dumps, zips, etc.)
+stuff/
+*.zip
+*.sql
+
+# Images not tracked in git
+img/
+*.png
