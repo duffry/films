@@ -323,7 +323,7 @@ async function openServiceItems(serviceRow) {
 
   for (const item of items) {
     const row = document.createElement("div");
-    row.className = "card-row";
+    row.className = "service-card";
 
     // make the whole row clickable - jump to main film detail
     row.addEventListener("click", () => {
@@ -344,7 +344,7 @@ async function openServiceItems(serviceRow) {
     textWrap.appendChild(title);
 
     const subtitle = document.createElement("div");
-    subtitle.className = "card-sub";
+    subtitle.className = "card-subtitle";
     subtitle.textContent = item.list_name || "";
     textWrap.appendChild(subtitle);
 
