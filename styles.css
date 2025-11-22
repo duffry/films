@@ -218,7 +218,7 @@ main,
 }
 
 #addListButton {
-  margin-top: 0.75rem;
+  /* margin-top: 0.75rem; */
   appearance: none;
   border: none;
   border-radius: 999px;
@@ -244,11 +244,10 @@ main,
 }
 
 #addFilmButton {
-  margin-top: 0.75rem;
   appearance: none;
   border: none;
   border-radius: 999px;
-  padding: 0.45rem 0.9rem;
+  padding: 0.45rem 0.45rem;
   font-size: 0.95rem;
   font-weight: 600;
   background: #a04b00;
@@ -745,7 +744,7 @@ table.stats-table tbody tr:nth-child(even) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.45rem 0.9rem;
+  padding: 0.45rem 0.45rem;
   border-radius: 999px;
   background: var(--list-progress-color, #a04b00);
   color: #ffffff;
@@ -764,3 +763,19 @@ table.stats-table tbody tr:nth-child(even) {
 #addFromImdbButton.imdb-pill:active {
   transform: translateY(1px);
 }
+
+/* #addFromImdbButton.imdb-pill img {
+  width: 1.1rem;
+  height: 1.1rem;
+  display: block;
+} */
+
+/* Same vertical sizing for both buttons */
+/* .lists-primary-actions #addFilmButton,
+.lists-primary-actions #addFromImdbButton.imdb-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-block: 0.55rem;
+  line-height: 1.2;
+} */
